@@ -11,7 +11,8 @@ def parse_request(raw_text: str, domain: str) -> dict:
     Uses Groq to parse the raw text into a structured JSON 
     matching the domain schema.
     """
-    schema_path = f"schemas/{domain}.json"
+    current_dir = os.path.dirname(__file__)
+    schema_path = os.path.join(current_dir, "schemas", f"{domain}.json")
     if not os.path.exists(schema_path):
         return {"needs_human_clarification": True, "raw": raw_text, "error": f"Unknown domain schema: {domain}"}
     
@@ -38,7 +39,7 @@ def parse_request(raw_text: str, domain: str) -> dict:
                 {"role": "system", "content": "You are a helpful assistant that outputs strictly in JSON."},
                 {"role": "user", "content": prompt}
             ],
-            model="llama-3.1-8b-instant", # Defaulting to a fast groq model
+            model="openai/gpt-oss-120b", # Defaulting to a supported fast model
             response_format={"type": "json_object"},
             temperature=0,
         )
