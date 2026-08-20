@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "properties": {
+    "event_type": {
+      "type": "string",
+      "enum": ["new order", "cancel order"]
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "quantity": { "type": "integer" }
+        },
+        "required": ["name", "quantity"]
+      }
+    },
+    "table_number": {
+      "type": "integer"
+    },
+    "needs_human_clarification": {
+      "type": "boolean"
+    }
+  },
+  "required": ["event_type", "items", "table_number", "needs_human_clarification"]
+}
