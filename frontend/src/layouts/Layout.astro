@@ -6,31 +6,85 @@ export interface Props {
 }
 
 const { title } = Astro.props;
+const currentPath = Astro.url.pathname;
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="antialiased">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <script is:inline>
+      // Theme initialization to prevent FOUC
+      const theme = (() => {
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+          return localStorage.getItem('theme');
+        }
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          return 'dark';
+        }
+        return 'light';
+      })();
+      if (theme === 'light') {
+        document.documentElement.classList.remove('dark');
+      } else {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
   </head>
-  <body>
-    <div class="max-w-[1400px] mx-auto px-4 md:px-6">
-      <nav class="h-16 flex items-center justify-between border-b border-hairline bg-canvas px-4 rounded-b-md shadow-[0_1px_1px_rgba(0,0,0,0.05)]">
-        <div class="font-bold text-ink">FlowOps</div>
-        <div class="flex gap-2">
-          <a href="#" class="text-body text-sm font-medium px-3 py-1 hover:bg-canvas-soft rounded-full">Dashboard</a>
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50 min-h-screen transition-colors duration-300">
+    <div class="max-w-[1200px] mx-auto px-4 md:px-8">
+      <nav class="h-20 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
+        <a href="/" class="flex items-center gap-2 font-semibold text-lg text-slate-900 dark:text-white hover:opacity-80 transition-opacity">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md">
+            <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+          </div>
+          FlowOps
+        </a>
+        <div class="flex items-center gap-4">
+          <a href="/" class={`text-sm font-medium px-4 py-2 rounded-full transition-colors hidden sm:block ${currentPath === '/' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}>New Request</a>
+          <a href="/dashboard" class={`text-sm font-medium px-4 py-2 rounded-full transition-colors hidden sm:block ${currentPath.startsWith('/dashboard') ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'}`}>Dashboard</a>
+          
+          <div class="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
+          
+          <button id="themeToggle" class="p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors" aria-label="Toggle theme">
+            <svg id="sunIcon" class="w-5 h-5 hidden dark:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            <svg id="moonIcon" class="w-5 h-5 block dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+          </button>
         </div>
       </nav>
-      <main class="py-16">
+      <main class="py-12 md:py-20">
         <slot />
       </main>
-      <footer class="py-16 mt-16 border-t border-hairline text-center text-body text-sm">
-        <p>&copy; 2026 FlowOps</p>
+      <footer class="py-8 mt-12 border-t border-slate-200 dark:border-slate-800 text-center text-slate-500 dark:text-slate-400 text-sm">
+        <p>&copy; 2026 FlowOps. Secure Request Engine.</p>
       </footer>
     </div>
+    
+    <!-- Mobile nav fallback -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 p-4 flex justify-around sm:hidden z-50">
+      <a href="/" class={`text-sm font-medium ${currentPath === '/' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>New Request</a>
+      <a href="/dashboard" class={`text-sm font-medium ${currentPath.startsWith('/dashboard') ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>Dashboard</a>
+    </div>
+
+    <script>
+      const themeToggleBtn = document.getElementById('themeToggle');
+      if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+          const html = document.documentElement;
+          const isDark = html.classList.contains('dark');
+          if (isDark) {
+            html.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+          } else {
+            html.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+          }
+        });
+      }
+    </script>
   </body>
 </html>
