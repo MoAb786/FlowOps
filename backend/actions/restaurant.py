@@ -2,8 +2,6 @@ import os
 import json
 from datetime import datetime
 
-LOG_FILE = os.path.join(os.path.dirname(__file__), "..", "kitchen_queue.log")
-
 def execute(request: dict) -> dict:
     if not isinstance(request, dict):
         return {"status": "error", "action": "restaurant_order_processed", "error": "Request must be a dictionary"}
@@ -38,20 +36,9 @@ def execute(request: dict) -> dict:
         if not isinstance(qty, int) or qty <= 0:
             return {"status": "error", "action": "restaurant_order_processed", "error": f"Quantity must be a positive integer, got: {qty}"}
             
-    # File logging
-    try:
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
-            timestamp = datetime.utcnow().isoformat()
-            log_entry = {
-                "timestamp": timestamp,
-                "event_type": event_type,
-                "table_number": table_number,
-                "items": items,
-                "request_id": request_id
-            }
-            f.write(json.dumps(log_entry) + "\n")
-    except Exception as e:
-        return {"status": "error", "action": "restaurant_order_processed", "error": f"Failed to write log: {str(e)}"}
+    # Console logging
+    item_str = ", ".join([f"{i.get('quantity')}x {i.get('name')}" for i in items])
+    print(f"[Restaurant Action] {event_type} - Table {table_number} - {item_str} (Request: {request_id})")
         
     return {
         "status": "success",

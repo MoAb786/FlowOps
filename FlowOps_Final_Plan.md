@@ -63,6 +63,7 @@ Every transition is automatic except one: the human decision inside Notion.
 ```
 
 - **Astro** = requester-facing submission UI only. Not a duplicate operator dashboard.
+- **LLM Engine**: Gemini (via python SDK) for intelligent parsing.
 - **Notion** = the only operator interface. Pending queue, approve/reject, override, Run Log — all live here.
 - **FastAPI** = the actual engine. Owns parsing, routing, execution, logging.
 

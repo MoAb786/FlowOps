@@ -52,7 +52,7 @@ generate-parameter-library-py==0.7.4
 geographic-msgs==1.0.6
 geometry-msgs==4.9.1
 gps-msgs==2.1.2
-groq==1.6.0
+google-genai==0.2.0
 h11==0.16.0
 httpcore==1.0.9
 httpx==0.28.1

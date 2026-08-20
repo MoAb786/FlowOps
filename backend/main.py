@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from core import handle_new_request
-from notion_helper import process_notion_webhook
+from notion_helper import process_notion_webhook, get_all_requests
 from poller import poll_notion_updates
 import uvicorn
 
@@ -40,6 +40,10 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+@app.get("/requests")
+async def get_requests():
+    return await get_all_requests()
 
 @app.post("/requests")
 async def submit_request(request: Request):

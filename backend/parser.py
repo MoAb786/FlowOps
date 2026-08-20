@@ -1,7 +1,8 @@
 import json
 import os
 from dotenv import load_dotenv
-from groq import Groq
+from google import genai
+from google.genai import types
 from pydantic import BaseModel, Field
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -11,12 +12,11 @@ print("Looking for .env at:", ENV_PATH)
 
 load_dotenv(ENV_PATH)
 
-api_key = os.getenv("GROQ_API_KEY")
+api_key = os.getenv("GEMINI_API_KEY")
 
 print("API key found:", bool(api_key))
-# Initialize Groq client
-# It will automatically pick up GROQ_API_KEY from the environment
-client = Groq(api_key=api_key)
+# Initialize Gemini client
+client = genai.Client(api_key=api_key)
 
 class Item(BaseModel):
     name: str | None = None
@@ -30,7 +30,7 @@ class LabRequest(BaseModel):
 
 def parse_request(raw_text: str, domain: str) -> dict:
     """
-    Uses Groq to parse the raw text into a structured JSON 
+    Uses Gemini to parse the raw text into a structured JSON 
     matching the domain schema.
     """
     schema_path = f"schemas/{domain}.json"
@@ -40,7 +40,7 @@ def parse_request(raw_text: str, domain: str) -> dict:
     with open(schema_path, "r") as f:
         schema = json.load(f)
 
-    # Use Groq to extract JSON matching the schema
+    # Use Gemini to extract JSON matching the schema
     prompt = f"""
     You are FlowOps, an intelligent request-parsing assistant.
 
@@ -92,8 +92,10 @@ def parse_request(raw_text: str, domain: str) -> dict:
     7. Preserve quantities exactly as stated by the user. Do not change,
     estimate, or invent quantities.
 
-    8. If an item is mentioned but its quantity is missing, do not assume
-    the quantity is 1. Use null and request clarification.
+    8. If an item is mentioned but its quantity is missing, check if the request
+    uses singular articles ("a", "an") or clearly implies a single item (e.g. "one"). 
+    If so, set the quantity to 1. Otherwise, if the quantity is completely unknown
+    or ambiguous, use null and request clarification.
 
     9. If the user's request does not make sense for the current domain,
     do not attempt to force it into the schema. Set
@@ -115,23 +117,22 @@ def parse_request(raw_text: str, domain: str) -> dict:
     """
     
     try:
-        response = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant that outputs strictly in JSON."},
-                {"role": "user", "content": prompt}
-            ],
-            model="openai/gpt-oss-20b", # Defaulting to a fast groq model
-            response_format={"type": "json_object"},
-            temperature=0,
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                system_instruction="You are a helpful assistant that outputs strictly in JSON.",
+                temperature=0,
+            )
         )
         
-        result_content = response.choices[0].message.content
+        result_content = response.text
         parsed_json = json.loads(result_content)
-        validated_request = LabRequest.model_validate(parsed_json)
-        return validated_request.model_dump()
+        return parsed_json
         
     except Exception as e:
-        print(f"Error parsing with Groq: {e}")
+        print(f"Error parsing with Gemini: {e}")
         return {"needs_human_clarification": True, "raw": raw_text, "error": str(e)}
 
 if __name__ == "__main__":

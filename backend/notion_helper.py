@@ -25,9 +25,9 @@ notion = AsyncClient(
 REQUESTS_DB_ID = clean_notion_id(os.environ.get("NOTION_REQUESTS_DB_ID", ""))
 RUN_LOG_DB_ID = clean_notion_id(os.environ.get("NOTION_RUN_LOG_DB_ID", ""))
 
-async def create_pending_card(request_record: dict):
+async def create_pending_card(request_record: dict, processed: bool = False):
     """
-    Creates a new card in the Notion Pending Requests database.
+    Creates a new card in the Notion Requests database.
     """
     try:
         response = await notion.pages.create(
@@ -40,20 +40,24 @@ async def create_pending_card(request_record: dict):
                 "risk_level": {"select": {"name": request_record.get("risk_level", "Normal")}},
                 "event_type": {"select": {"name": request_record.get("event_type", "issue component")}},
                 "details": {"rich_text": [{"text": {"content": json.dumps(request_record.get("details", {}))}}]},
-                "Processed": {"checkbox": False}
+                "Processed": {"checkbox": processed}
             }
         )
-        print(f"[Notion] Created Pending Card successfully: {response.get('id')}")
+        print(f"[Notion] Created Card successfully: {response.get('id')}")
         return {"status": "success", "notion_id": response.get("id"), "record": request_record}
     except Exception as e:
-        print(f"[Notion] Error creating pending card: {e}")
+        print(f"[Notion] Error creating card: {e}")
         return {"status": "error", "error": str(e), "record": request_record}
 
 async def auto_approve_and_log(request_record: dict):
     """
-    For low-risk requests, skip Notion pending queue, just log it.
+    For low-risk requests, log it and create a card in Notion marked as processed.
     """
     print(f"[System] Auto-approving request {request_record['request_id']}")
+    
+    # Create the card in the Requests dashboard, marked as processed
+    await create_pending_card(request_record, processed=True)
+
     await write_run_log({
         "request_id": request_record["request_id"],
         "action_taken": request_record["event_type"],
@@ -179,3 +183,72 @@ async def trigger_domain_action(request_record: dict):
     elif domain == "restaurant":
         from actions.restaurant import execute
         execute(request_record)
+
+async def get_all_requests():
+    """
+    Retrieves all requests from the Notion Requests database.
+    """
+    try:
+        response = await notion.request(
+            path=f"databases/{REQUESTS_DB_ID}/query",
+            method="POST",
+            body={
+                "sorts": [{"timestamp": "created_time", "direction": "descending"}],
+                "page_size": 50
+            }
+        )
+        
+        results = []
+        for page in response.get("results", []):
+            props = page.get("properties", {})
+            
+            # Extract Request ID
+            req_id_list = props.get("Name", {}).get("title", [])
+            req_id = req_id_list[0]["text"]["content"] if req_id_list else "unknown"
+            
+            # Extract Domain
+            domain_select = props.get("domain", {}).get("select") or {}
+            domain = domain_select.get("name", "")
+            
+            # Extract Sender
+            sender_list = props.get("sender_id", {}).get("rich_text", [])
+            sender_id = sender_list[0]["text"]["content"] if sender_list else ""
+            
+            # Extract Status
+            status_select = props.get("status", {}).get("select") or {}
+            status = status_select.get("name", "")
+            
+            # Extract Risk Level
+            risk_select = props.get("risk_level", {}).get("select") or {}
+            risk_level = risk_select.get("name", "")
+            
+            # Extract Event Type
+            event_select = props.get("event_type", {}).get("select") or {}
+            event_type = event_select.get("name", "")
+            
+            # Extract Details
+            details_list = props.get("details", {}).get("rich_text", [])
+            details_str = details_list[0]["text"]["content"] if details_list else "{}"
+            try:
+                details = json.loads(details_str)
+            except:
+                details = {}
+                
+            # Extract Created At
+            created_at = page.get("created_time", "")
+            
+            results.append({
+                "request_id": req_id,
+                "domain": domain,
+                "sender_id": sender_id,
+                "event_type": event_type,
+                "details": details,
+                "status": status,
+                "risk_level": risk_level,
+                "created_at": created_at
+            })
+            
+        return results
+    except Exception as e:
+        print(f"[Notion] Error fetching requests: {e}")
+        return []

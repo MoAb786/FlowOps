@@ -1,13 +1,13 @@
 # FlowOps - Backend Engine
 
-FastAPI-powered backend engine for FlowOps that parses natural language requests using Groq LLM, routes them according to domain-specific risk criteria, and syncs status with Notion databases.
+FastAPI-powered backend engine for FlowOps that parses natural language requests using Gemini LLM, routes them according to domain-specific risk criteria, and syncs status with Notion databases.
 
 ---
 
 ## 🛠️ Prerequisites
 
 - **Python 3.10+**
-- **Groq API Key** (for LLM request extraction)
+- **Gemini API Key** (for LLM request extraction)
 - **Notion Integration Token & Database ID** (for ticketing/request tracking)
 
 ---
@@ -43,7 +43,7 @@ pip install -r requirements.txt
 
 > **Note:** If you want to install only the core FlowOps service packages without optional robotics/ROS packages, you can run:
 > ```bash
-> pip install fastapi uvicorn python-dotenv groq notion-client pydantic httpx
+> pip install fastapi uvicorn python-dotenv google-genai notion-client pydantic httpx
 > ```
 
 ### 4. Configure Environment Variables
@@ -55,7 +55,7 @@ cp .env.example .env
 
 Edit `.env` with your API keys:
 ```dotenv
-GROQ_API_KEY=gsk_your_groq_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 NOTION_API_KEY=ntn_your_notion_integration_token_here
 NOTION_REQUESTS_DB_ID=your_notion_database_id_here
 ```
@@ -115,7 +115,7 @@ backend/
 ├── core.py             # Orchestration logic (Parse -> Route -> Approve/Log)
 ├── main.py             # FastAPI entrypoint and route definitions
 ├── notion_helper.py    # Notion API async client integration
-├── parser.py           # Groq LLM structured JSON extractor
+├── parser.py           # Gemini LLM structured JSON extractor
 ├── router.py           # Domain risk-assessment & approver routing
 ├── .env.example        # Environment variable template
 └── requirements.txt    # Python package dependencies
