@@ -1,18 +1,39 @@
 import json
 import os
+from dotenv import load_dotenv
 from groq import Groq
+from pydantic import BaseModel, Field
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENV_PATH = os.path.join(BASE_DIR, ".env")
+
+print("Looking for .env at:", ENV_PATH)
+
+load_dotenv(ENV_PATH)
+
+api_key = os.getenv("GROQ_API_KEY")
+
+print("API key found:", bool(api_key))
 # Initialize Groq client
 # It will automatically pick up GROQ_API_KEY from the environment
-client = Groq()
+client = Groq(api_key=api_key)
+
+class Item(BaseModel):
+    name: str | None = None
+    quantity: int | None = Field(default=None, ge=1)
+
+
+class LabRequest(BaseModel):
+    event_type: str | None = None
+    items: list[Item] = Field(default_factory=list)
+    needs_human_clarification: bool = False
 
 def parse_request(raw_text: str, domain: str) -> dict:
     """
     Uses Groq to parse the raw text into a structured JSON 
     matching the domain schema.
     """
-    current_dir = os.path.dirname(__file__)
-    schema_path = os.path.join(current_dir, "schemas", f"{domain}.json")
+    schema_path = f"schemas/{domain}.json"
     if not os.path.exists(schema_path):
         return {"needs_human_clarification": True, "raw": raw_text, "error": f"Unknown domain schema: {domain}"}
     
@@ -21,16 +42,76 @@ def parse_request(raw_text: str, domain: str) -> dict:
 
     # Use Groq to extract JSON matching the schema
     prompt = f"""
-    You are an AI assistant parsing user requests into structured data.
-    Domain: {domain}
-    
-    Please extract the relevant details from the user's request and output a valid JSON object matching this schema:
+    You are FlowOps, an intelligent request-parsing assistant.
+
+    Your job is to convert a user's natural-language request into accurate,
+    structured JSON that can be safely processed by an automation system.
+
+    You can work across multiple domains. Adapt your understanding and
+    terminology based on the provided domain.
+
+    CURRENT DOMAIN: {domain}
+
+    DOMAIN ROLE:
+    - If the domain is "lab", act as an intelligent lab management assistant.
+    Understand requests related to issuing, returning, borrowing, or managing
+    laboratory components and equipment.
+
+    - If the domain is "restaurant", act as an intelligent restaurant assistant,
+    waiter, or manager. Understand requests related to orders, cancellations,
+    tables, and restaurant operations.
+
+    Your task is to analyze the user's request and extract only the information
+    that is explicitly stated or can be unambiguously understood from the request.
+
+    Return a JSON object that follows this schema:
+
     {json.dumps(schema, indent=2)}
-    
-    If the request is ambiguous, lacks details, or doesn't make sense for the domain, set "needs_human_clarification" to true.
-    Return ONLY the raw JSON object, without any markdown formatting or explanations.
-    
-    User Request: "{raw_text}"
+
+    STRICT EXTRACTION RULES:
+
+    1. NEVER invent, assume, or guess information that the user did not provide.
+
+    2. If required information is missing, unclear, ambiguous, or cannot be
+    confidently determined, use null where the schema allows it.
+
+    3. If the request requires additional information before it can be safely
+    processed, set:
+    "needs_human_clarification": true
+
+    4. If all required information is clear and sufficient, set:
+    "needs_human_clarification": false
+
+    5. Correctly identify the appropriate event_type from the allowed values
+    in the provided schema.
+
+    6. Support multiple items. If the user requests multiple components,
+    equipment items, or products, include every item separately in the
+    "items" array.
+
+    7. Preserve quantities exactly as stated by the user. Do not change,
+    estimate, or invent quantities.
+
+    8. If an item is mentioned but its quantity is missing, do not assume
+    the quantity is 1. Use null and request clarification.
+
+    9. If the user's request does not make sense for the current domain,
+    do not attempt to force it into the schema. Set
+    "needs_human_clarification": true.
+
+    10. Interpret natural, informal, abbreviated, or conversational language
+        correctly, but do not infer information beyond what is reasonably clear.
+
+    OUTPUT RULES:
+
+    - Return ONLY one valid JSON object.
+    - Do NOT return markdown.
+    - Do NOT use ```json or code fences.
+    - Do NOT include explanations, comments, reasoning, or additional text.
+    - Ensure the output can be parsed directly using json.loads().
+
+    USER REQUEST:
+    "{raw_text}"
     """
     
     try:
@@ -39,15 +120,36 @@ def parse_request(raw_text: str, domain: str) -> dict:
                 {"role": "system", "content": "You are a helpful assistant that outputs strictly in JSON."},
                 {"role": "user", "content": prompt}
             ],
-            model="openai/gpt-oss-120b", # Defaulting to a supported fast model
+            model="openai/gpt-oss-20b", # Defaulting to a fast groq model
             response_format={"type": "json_object"},
             temperature=0,
         )
         
         result_content = response.choices[0].message.content
         parsed_json = json.loads(result_content)
-        return parsed_json
+        validated_request = LabRequest.model_validate(parsed_json)
+        return validated_request.model_dump()
         
     except Exception as e:
         print(f"Error parsing with Groq: {e}")
         return {"needs_human_clarification": True, "raw": raw_text, "error": str(e)}
+
+if __name__ == "__main__":
+
+    test_requests = [
+        "I need 2 Arduino Uno boards",
+        "I need 2 Arduino Uno boards and 3 breadboards",
+        "I need an Arduino Uno",
+        "I am returning 5 LEDs",
+        "I need some equipment"
+    ]
+
+    for request in test_requests:
+        print("\n" + "=" * 50)
+        print("USER REQUEST:")
+        print(request)
+
+        result = parse_request(request, "lab")
+
+        print("\nPARSED RESULT:")
+        print(json.dumps(result, indent=4))
