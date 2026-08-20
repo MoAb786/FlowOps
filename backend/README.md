@@ -121,4 +121,3 @@ backend/
 └── requirements.txt    # Python package dependencies
 ```
 
-test

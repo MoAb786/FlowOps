@@ -2,23 +2,34 @@
   "type": "object",
   "properties": {
     "event_type": {
-      "type": "string",
-      "enum": ["issue component", "return component"]
+      "type": ["string", "null"],
+      "enum": ["issue component", "return component", null]
     },
+
     "items": {
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
-          "name": { "type": "string" },
-          "quantity": { "type": "integer" }
-        },
-        "required": ["name", "quantity"]
+          "name": {
+            "type": ["string", "null"]
+          },
+          "quantity": {
+            "type": ["integer", "null"],
+            "minimum": 1
+          }
+        }
       }
     },
+
     "needs_human_clarification": {
       "type": "boolean"
     }
   },
-  "required": ["event_type", "items", "needs_human_clarification"]
+
+  "required": [
+    "event_type",
+    "items",
+    "needs_human_clarification"
+  ]
 }
