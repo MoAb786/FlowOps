@@ -45,6 +45,16 @@ async def health_check():
 async def get_requests():
     return await get_all_requests()
 
+@app.get("/inventory")
+async def get_inventory():
+    from pathlib import Path
+    import json
+    inventory_path = Path(__file__).resolve().parent / "data" / "inventory.json"
+    if not inventory_path.exists():
+        return {}
+    with open(inventory_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
 @app.post("/requests")
 async def submit_request(request: Request):
     data = await request.json()

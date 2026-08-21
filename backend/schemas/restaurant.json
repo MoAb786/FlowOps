@@ -17,7 +17,9 @@
       }
     },
     "table_number": {
-      "type": "integer"
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Table number. Use null if not specified by the user — do NOT use 0."
     },
     "needs_human_clarification": {
       "type": "boolean"

@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from notion_helper import notion, REQUESTS_DB_ID, trigger_domain_action, write_run_log, update_card_status_and_process
+from telegram_helper import send_telegram, now_ist
 
 async def poll_notion_updates():
     """
@@ -47,11 +48,10 @@ async def poll_notion_updates():
             if not status:
                 continue
             
-            # Extract request details
-            request_id_list = properties.get("Name", {}).get("title", [])
-            if not request_id_list:
-                request_id_list = properties.get("request_id", {}).get("title", [])
-            request_id = request_id_list[0]["text"]["content"] if request_id_list else "unknown"
+            # Use page_id as the request_id — the Name property holds the
+            # human-readable title (e.g. "Lab Request — user_123 — 1x Arduino Uno"),
+            # not the original UUID.
+            request_id = page_id
             
             domain = properties.get("domain", {}).get("select", {}).get("name", "lab")
             event_type = properties.get("event_type", {}).get("select", {}).get("name", "issue component")
@@ -93,6 +93,12 @@ async def poll_notion_updates():
                     "timestamp": datetime.utcnow().isoformat(),
                     "result": "Denied"
                 })
+                send_telegram(
+                    f"\u274c <b>Request Denied</b>\n"
+                    f"\U0001f516 Request ID: {str(request_id)[:8].upper()}\n"
+                    f"\U0001f464 Requested by: {sender_id}\n"
+                    f"\U0001f550 {now_ist()}"
+                )
                 
             # Mark the card as Processed in Notion
             await update_card_status_and_process(page_id, status, processed=True)

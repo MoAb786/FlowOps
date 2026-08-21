@@ -1,7 +1,22 @@
 import json
 import os
+from pathlib import Path
 from pydantic import BaseModel, Field
 from ai_client import generate_with_fallback
+
+_INVENTORY_PATH = Path(__file__).resolve().parent / "data" / "inventory.json"
+
+
+def _load_known_items(domain: str) -> list[str]:
+    """Load the list of known item names for a domain from inventory.json."""
+    try:
+        if _INVENTORY_PATH.exists():
+            with open(_INVENTORY_PATH, "r", encoding="utf-8") as f:
+                inventory = json.load(f)
+            return list(inventory.get(domain, {}).keys())
+    except Exception:
+        pass
+    return []
 
 
 class Item(BaseModel):
@@ -29,6 +44,37 @@ def parse_request(raw_text: str, domain: str) -> dict:
     with open(schema_path, "r") as f:
         schema = json.load(f)
 
+    # Load known inventory items so AI can fuzzy-match user input
+    known_items = _load_known_items(domain)
+    known_items_section = ""
+    if known_items:
+        items_list = "\n".join(f"  - {item}" for item in known_items)
+        known_items_section = f"""
+==================================================
+KNOWN INVENTORY ITEMS
+==================================================
+
+The following items exist in the {domain} inventory (use EXACT names from this list):
+
+{items_list}
+
+FUZZY MATCHING RULES:
+- Map user input to the closest matching inventory item name (exact case as listed above).
+- Examples:
+  - "arduino" or "arduinos" or "Arduino Uno board" → "Arduino Uno"
+  - "raspi" or "raspberry" or "RPi" → "Raspberry Pi"
+  - "LED" or "led" or "LEDs" → "LED"
+  - "breadboard" or "bread board" → "Breadboard"
+  - "jumper" or "jumper wire" or "wires" → "Jumper Wires"
+  - "servo" or "servo motor" → "Servo Motor"
+  - "osc" or "oscilloscope" → "Oscilloscope"
+  - "multimeter" or "meter" → "Multimeter"
+- If the user mentions an item that clearly does NOT match any inventory item,
+  still include it with its original name but set needs_human_clarification to true.
+- NEVER invent quantities. Only match names.
+
+"""
+
 
     prompt = f"""
 You are FlowOps, an intelligent natural-language request parser for an
@@ -50,7 +96,7 @@ CURRENT DOMAIN:
 
 DOMAIN SCHEMA:
 {json.dumps(schema, indent=2)}
-
+{known_items_section}
 Your task is to convert the user's natural-language message into a JSON object
 that follows the provided schema exactly.
 

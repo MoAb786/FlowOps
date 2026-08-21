@@ -1,10 +1,7 @@
-import os
 import json
 import threading
-import urllib.request
-import urllib.error
-from datetime import datetime
 from pathlib import Path
+from telegram_helper import send_telegram, now_ist
 
 # ---------------------------------------------------------------------------
 # Shared inventory store — backend/data/inventory.json
@@ -62,40 +59,6 @@ def _update_restaurant_inventory(items: list, event_type: str) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Telegram notification
-# ---------------------------------------------------------------------------
-def _send_telegram_notification(message: str) -> None:
-    """
-    Send a message to the configured Telegram chat via the Bot API.
-
-    Requires env vars:
-      TELEGRAM_BOT_TOKEN  — bot token from BotFather
-      TELEGRAM_CHAT_ID    — chat/channel/group ID to deliver to
-    """
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
-
-    if not bot_token or not chat_id:
-        print("[Telegram] Skipping notification — TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set.")
-        return
-
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = json.dumps({"chat_id": chat_id, "text": message, "parse_mode": "HTML"}).encode()
-
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            print(f"[Telegram] Notification sent. Status: {resp.status}")
-    except urllib.error.URLError as e:
-        print(f"[Telegram] Notification failed: {e.reason}")
-
-
-# ---------------------------------------------------------------------------
 # Main entry point — called by notion_helper.trigger_domain_action()
 # ---------------------------------------------------------------------------
 def execute(request: dict) -> dict:
@@ -111,11 +74,13 @@ def execute(request: dict) -> dict:
     if not isinstance(items, list) or len(items) == 0:
         return {"status": "error", "action": "restaurant_order_processed", "error": "Missing or empty 'items' list"}
 
+    # table_number is optional — null or 0 is allowed, displayed as "Unknown"
     table_number = details.get("table_number")
-    if not isinstance(table_number, int) or table_number <= 0:
-        return {"status": "error", "action": "restaurant_order_processed", "error": "Missing or invalid 'table_number'"}
+    if table_number is not None and (not isinstance(table_number, int) or table_number <= 0):
+        table_number = None  # treat invalid (e.g. 0) the same as missing
+    table_display = str(table_number) if table_number else "Unknown"
 
-    event_type = details.get("event_type")
+    event_type = request.get("event_type") or details.get("event_type")
     if event_type not in ["new order", "cancel order"]:
         return {"status": "error", "action": "restaurant_order_processed", "error": f"Invalid or missing event_type: {event_type}"}
 
@@ -139,7 +104,7 @@ def execute(request: dict) -> dict:
         direction = "ordered" if event_type == "new order" else "cancelled"
         print(
             f"[Restaurant Inventory] {ch['name']}: {ch['before']} → {ch['after']} "
-            f"({ch['quantity']} {direction}) | Table {table_number} | Request: {request_id}"
+            f"({ch['quantity']} {direction}) | Table {table_display} | Request: {request_id}"
         )
 
     # ---- 2. Send Telegram notification ----
@@ -150,11 +115,11 @@ def execute(request: dict) -> dict:
     tg_message = (
         f"\U0001f37d\ufe0f <b>Restaurant Order {action_label}</b>\n"
         f"\U0001f516 Request ID: {short_id}\n"
-        f"\U0001f4cb Table: {table_number} | Placed by: {sender_id}\n"
+        f"\U0001f4cb Table: {table_display} | Placed by: {sender_id}\n"
         f"\U0001f6d2 Items:\n{item_lines}\n"
-        f"\U0001f550 {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
+        f"\U0001f550 {now_ist()}"
     )
-    _send_telegram_notification(tg_message)
+    send_telegram(tg_message)
 
     return {
         "status": "success",

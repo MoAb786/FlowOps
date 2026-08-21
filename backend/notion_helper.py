@@ -3,6 +3,7 @@ import json
 import re
 from datetime import datetime
 from notion_client import AsyncClient
+from telegram_helper import send_telegram, now_ist
 
 def clean_notion_id(raw_id: str) -> str:
     """
@@ -148,6 +149,39 @@ async def create_pending_card(request_record: dict, processed: bool = False):
             ]
         )
         print(f"[Notion] Created Card successfully: {response.get('id')}")
+
+        # --- Telegram notification for new submissions ---
+        status = request_record.get("status", "Pending")
+        if status == "Pending":
+            details_dict = request_record.get("details", {})
+            items = details_dict.get("items", [])
+            item_lines = "\n".join(
+                f"  \u2022 {i.get('quantity', '?')}x {i.get('name', '?')}" for i in items
+            ) if items else "  (see Notion for details)"
+            risk = request_record.get("risk_level", "")
+            risk_emoji = "\U0001f7e1" if risk == "MEDIUM" else "\U0001f534" if risk == "HIGH" else "\u26aa"
+            short_id = str(request_record.get("request_id", ""))[:8].upper()
+            sender = request_record.get("sender_id", "unknown")
+            domain = request_record.get("domain", "").capitalize()
+            send_telegram(
+                f"\u23f3 <b>New {domain} Request — Pending Review</b>\n"
+                f"\U0001f516 Request ID: {short_id}\n"
+                f"\U0001f464 From: {sender}\n"
+                f"\U0001f4e6 Items:\n{item_lines}\n"
+                f"{risk_emoji} Risk: {risk}\n"
+                f"\U0001f550 {now_ist()}"
+            )
+        elif status == "Needs Clarification":
+            short_id = str(request_record.get("request_id", ""))[:8].upper()
+            sender = request_record.get("sender_id", "unknown")
+            send_telegram(
+                f"\u2753 <b>Request Needs Clarification</b>\n"
+                f"\U0001f516 Request ID: {short_id}\n"
+                f"\U0001f464 From: {sender}\n"
+                f"\U0001f4dd The request was unclear. Please follow up.\n"
+                f"\U0001f550 {now_ist()}"
+            )
+
         return {"status": "success", "notion_id": response.get("id"), "record": request_record}
     except Exception as e:
         print(f"[Notion] Error creating card: {e}")
@@ -284,6 +318,12 @@ async def process_notion_webhook(payload: dict):
                     "timestamp": datetime.utcnow().isoformat(),
                     "result": "Denied"
                 })
+                send_telegram(
+                    f"\u274c <b>Request Denied</b>\n"
+                    f"\U0001f516 Request ID: {str(request_id)[:8].upper()}\n"
+                    f"\U0001f464 Requested by: {sender_id}\n"
+                    f"\U0001f550 {now_ist()}"
+                )
             
             await update_card_status_and_process(page_id, status, processed=True)
             

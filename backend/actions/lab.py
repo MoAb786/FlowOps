@@ -1,10 +1,7 @@
-import os
 import json
 import threading
-import urllib.request
-import urllib.error
-from datetime import datetime
 from pathlib import Path
+from telegram_helper import send_telegram, now_ist
 
 # ---------------------------------------------------------------------------
 # Inventory store — backend/data/inventory.json
@@ -59,40 +56,6 @@ def _update_lab_inventory(items: list, event_type: str) -> list:
         _save_inventory(inventory)
 
     return changes
-
-
-# ---------------------------------------------------------------------------
-# Telegram notification
-# ---------------------------------------------------------------------------
-def _send_telegram_notification(message: str) -> None:
-    """
-    Send a message to the configured Telegram chat via the Bot API.
-
-    Requires env vars:
-      TELEGRAM_BOT_TOKEN  — bot token from BotFather
-      TELEGRAM_CHAT_ID    — chat/channel/group ID to deliver to
-    """
-    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
-
-    if not bot_token or not chat_id:
-        print("[Telegram] Skipping notification — TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set.")
-        return
-
-    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    payload = json.dumps({"chat_id": chat_id, "text": message, "parse_mode": "HTML"}).encode()
-
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            print(f"[Telegram] Notification sent. Status: {resp.status}")
-    except urllib.error.URLError as e:
-        print(f"[Telegram] Notification failed: {e.reason}")
 
 
 # ---------------------------------------------------------------------------
@@ -152,9 +115,9 @@ def execute(request: dict) -> dict:
         f"\U0001f464 {verb.capitalize()}: {sender_id}\n"
         f"\U0001f4e6 Items:\n{item_lines}"
         f"{reason_line}\n"
-        f"\U0001f550 {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}"
+        f"\U0001f550 {now_ist()}"
     )
-    _send_telegram_notification(tg_message)
+    send_telegram(tg_message)
 
     return {
         "status": "success",

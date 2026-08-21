@@ -1,32 +1,87 @@
-(venv) PS C:\Users\mansi\HACKATHONs\Group\FlowOps\backend> python main.py         
+(venv) PS C:\Users\mansi\HACKATHONs\Group\FlowOps\backend> python main.py
 INFO:     Will watch for changes in these directories: ['C:\\Users\\mansi\\HACKATHONs\\Group\\FlowOps\\backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [21644] using StatReload
-INFO:     Started server process [6848]
+INFO:     Started reloader process [9844] using StatReload
+INFO:     Started server process [6052]
 INFO:     Waiting for application startup.
 [System] Background Notion Poller started.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:61245 - "GET /requests HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61024 - "OPTIONS /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57829 - "OPTIONS /requests HTTP/1.1" 200 OK
 
 Trying Groq: openai/gpt-oss-20b
 Success using Groq: openai/gpt-oss-20b
+[Core] Parsed data: {'event_type': 'issue component', 'items': [{'name': 'LED', 'quantity': 2}], 'needs_human_clarification': False}
 
 Trying Groq: openai/gpt-oss-20b
 Success using Groq: openai/gpt-oss-20b
-[Notion] Created Card successfully: 3c39eee0-5447-81fd-bdd6-e4de6ec65b81
-INFO:     127.0.0.1:61024 - "POST /requests HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56340 - "GET /requests HTTP/1.1" 200 OK
-WARNING:  StatReload detected changes in 'core.py'. Reloading...
+[Core] risk_level='NORMAL', approver='system'
+[Core] NORMAL risk → auto-approving
+[System] Auto-approving request 2e7f3a11-5c64-4b80-ab01-6d1bbddb5f6e
+[Notion] Created Card successfully: 3c39eee0-5447-812f-bc6c-f3743749c2e1
+[Notion] Logged run successfully: 3c39eee0-5447-81d7-9cf1-d8439e36ab64
+[Lab Inventory] LED: 200 → 198 (2 issued) | Request: 2e7f3a11-5c64-4b80-ab01-6d1bbddb5f6e
+[Telegram] Notification sent. Status: 200
+INFO:     127.0.0.1:52486 - "POST /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52486 - "GET /requests HTTP/1.1" 200 OK
+
+Trying Groq: openai/gpt-oss-20b
+Success using Groq: openai/gpt-oss-20b
+[Core] Parsed data: {'event_type': 'issue component', 'items': [{'name': 'Oscilloscope', 'quantity': 2}], 'needs_human_clarification': False}
+
+Trying Groq: openai/gpt-oss-20b
+Success using Groq: openai/gpt-oss-20b
+[Core] risk_level='MEDIUM', approver='operator'
+[Core] MEDIUM risk → creating pending card for human review
+[Notion] Created Card successfully: 3c39eee0-5447-812b-833b-c031d1fd9521
+INFO:     127.0.0.1:53736 - "POST /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53736 - "GET /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64782 - "GET /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54666 - "OPTIONS /requests HTTP/1.1" 200 OK
+
+Trying Groq: openai/gpt-oss-20b
+Success using Groq: openai/gpt-oss-20b
+[Core] Parsed data: {'event_type': 'issue component', 'items': [{'name': 'Arduino Uno', 'quantity': 2}, {'name': 'LED', 'quantity': 3}], 'needs_human_clarification': False}
+
+Trying Groq: openai/gpt-oss-20b
+Success using Groq: openai/gpt-oss-20b
+[Core] risk_level='NORMAL', approver='system'
+[Core] NORMAL risk → auto-approving
+[System] Auto-approving request 51730196-a428-48c2-8681-3b2be9a7a230
+[Notion] Created Card successfully: 3c39eee0-5447-81c1-84a0-c4aa4aa34efa
+[Notion] Logged run successfully: 3c39eee0-5447-8156-b120-d69bc8858d8c
+[Lab Inventory] Arduino Uno: 20 → 18 (2 issued) | Request: 51730196-a428-48c2-8681-3b2be9a7a230
+[Lab Inventory] LED: 198 → 195 (3 issued) | Request: 51730196-a428-48c2-8681-3b2be9a7a230
+[Telegram] Notification sent. Status: 200
+INFO:     127.0.0.1:56455 - "POST /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56455 - "GET /requests HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'actions\lab.py'. Reloading...
  INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [6848]
+INFO:     Finished server process [6052]
+INFO:     Started server process [13516]
+INFO:     Waiting for application startup.
+[System] Background Notion Poller started.
+INFO:     Application startup complete.
 WARNING:  StatReload detected changes in 'actions\lab.py'. Reloading...
+ INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [13516]
+INFO:     Started server process [22548]
+INFO:     Waiting for application startup.
+[System] Background Notion Poller started.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'actions\restaurant.py'. Reloading...
+ INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [22548]
+WARNING:  StatReload detected changes in 'notion_helper.py'. Reloading...
  Traceback (most recent call last):
   File "<string>", line 1, in <module>
-    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=21644, pipe_handle=576)
-                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=9844, pipe_handle=724)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 122, in spawn_main
     exitcode = _main(fd, parent_sentinel)
   File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 131, in _main
@@ -41,44 +96,132 @@ WARNING:  StatReload detected changes in 'actions\lab.py'. Reloading...
   File "<frozen runpy>", line 287, in run_path
   File "<frozen runpy>", line 98, in _run_module_code
   File "<frozen runpy>", line 88, in _run_code
-  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\main.py", line 1, in <module>
-    from dotenv import load_dotenv
-  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\dotenv\__init__.py", line 3, in <module>
-    from .main import dotenv_values, find_dotenv, get_key, load_dotenv, set_key, unset_key
-  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\dotenv\main.py", line 2, in <module>
-    import logging
-  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\logging\__init__.py", line 26, in <module>
-    import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
-  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\traceback.py", line 7, in <module>
-    import textwrap
-  File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
-  File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
-  File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
-  File "<frozen importlib._bootstrap_external>", line 758, in exec_module
-  File "<frozen importlib._bootstrap_external>", line 854, in get_code
-  File "<frozen importlib._bootstrap_external>", line 954, in get_data
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\main.py", line 8, in <module>
+    from core import handle_new_request
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\core.py", line 3, in <module>
+    from notion_helper import create_pending_card, auto_approve_and_log
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\notion_helper.py", line 22, in <module>
+    notion = AsyncClient(
+        auth=os.environ.get("NOTION_API_KEY"),
+        notion_version="2022-06-28"
+    )
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\notion_client\client.py", line 430, in __init__
+    client = httpx.AsyncClient()
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\httpx\_client.py", line 1402, in __init__
+    self._transport = self._init_transport(
+                      ~~~~~~~~~~~~~~~~~~~~^
+        verify=verify,
+        ^^^^^^^^^^^^^^
+    ...<5 lines>...
+        transport=transport,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\httpx\_client.py", line 1445, in _init_transport
+    return AsyncHTTPTransport(
+        verify=verify,
+    ...<4 lines>...
+        limits=limits,
+    )
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\httpx\_transports\default.py", line 297, in __init__
+    ssl_context = create_ssl_context(verify=verify, cert=cert, trust_env=trust_env)
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\httpx\_config.py", line 40, in create_ssl_context
+    ctx = ssl.create_default_context(cafile=certifi.where())
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\ssl.py", line 717, in create_default_context
+    context.load_verify_locations(cafile, capath, cadata)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
 KeyboardInterrupt
-INFO:     Started server process [19604]
+INFO:     Started server process [15896]
+INFO:     Waiting for application startup.
+[System] Background Notion Poller started.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'notion_helper.py'. Reloading...
+ INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [15896]
+INFO:     Started server process [1476]
+INFO:     Waiting for application startup.
+[System] Background Notion Poller started.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'notion_helper.py'. Reloading...
+ INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1476]
+INFO:     Started server process [23480]
+INFO:     Waiting for application startup.
+[System] Background Notion Poller started.
+INFO:     Application startup complete.
+WARNING:  StatReload detected changes in 'poller.py'. Reloading...
+ INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [23480]
+WARNING:  StatReload detected changes in 'poller.py'. Reloading...
+ Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=9844, pipe_handle=724)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 131, in _main
+    prepare(preparation_data)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                                  run_name="__mp_main__")
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\main.py", line 8, in <module>
+    from core import handle_new_request
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\core.py", line 1, in <module>
+    from parser import parse_request
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\parser.py", line 5, in <module>
+    from ai_client import generate_with_fallback
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\ai_client.py", line 4, in <module>
+    from google import genai
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\google\genai\__init__.py", line 21, in <module>
+    from . import types
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\google\genai\types.py", line 21967, in <module>
+    class LiveMusicClientContentDict(TypedDict, total=False):
+    ...<3 lines>...
+      """Weighted prompts as the model input."""
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\typing_extensions.py", line 1204, in __new__
+    tp_dict = type.__new__(_TypedDictMeta, "Protocol", (*generic_base, dict), ns)
+KeyboardInterrupt
+INFO:     Started server process [18684]
 INFO:     Waiting for application startup.
 [System] Background Notion Poller started.
 INFO:     Application startup complete.
 INFO:     Shutting down
 INFO:     Waiting for application shutdown.
 INFO:     Application shutdown complete.
-INFO:     Finished server process [19604]
-INFO:     Stopping reloader process [21644]
-(venv) PS C:\Users\mansi\HACKATHONs\Group\FlowOps\backend> python main.py
+INFO:     Finished server process [18684]
+INFO:     Stopping reloader process [9844]
+(venv) PS C:\Users\mansi\HACKATHONs\Group\FlowOps\backend> python main.py                      
 INFO:     Will watch for changes in these directories: ['C:\\Users\\mansi\\HACKATHONs\\Group\\FlowOps\\backend']
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [7948] using StatReload
-INFO:     Started server process [14488]
+INFO:     Started reloader process [23296] using StatReload
+INFO:     Started server process [18756]
 INFO:     Waiting for application startup.
 [System] Background Notion Poller started.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:61030 - "OPTIONS /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56906 - "GET /requests HTTP/1.1" 200 OK
 
 Trying Groq: openai/gpt-oss-20b
 Success using Groq: openai/gpt-oss-20b
-[Notion] Created Card successfully: 3c39eee0-5447-81fe-b6a0-f69222990f3f
-INFO:     127.0.0.1:61030 - "POST /requests HTTP/1.1" 200 OK
-INFO:     127.0.0.1:54334 - "GET /requests HTTP/1.1" 200 OK
+[Core] Parsed data: {'event_type': 'new order', 'items': [{'name': 'Pizza', 'quantity': 2}, {'name': 'Burger', 'quantity': 1}], 'table_number': 0, 'needs_human_clarification': True}
+[Core] needs_human_clarification=True → creating 'Needs Clarification' card
+[Notion] Created Card successfully: 3c39eee0-5447-818e-8931-c34de09244a7
+[Telegram] Notification sent. Status: 200
+INFO:     127.0.0.1:54082 - "POST /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54082 - "GET /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63805 - "GET /requests HTTP/1.1" 200 OK
+[Poller] Found 1 unprocessed approved/denied card(s)
+[Notion] Logged run successfully: 3c39eee0-5447-8160-9e49-e51265b7ecde
+[Notion] Updated card 3c39eee0-5447-818e-8931-c34de09244a7 status to Approved and Processed=True

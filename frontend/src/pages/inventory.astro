@@ -1,0 +1,210 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Inventory — FlowOps">
+  <div class="max-w-[1400px] mx-auto px-4 md:px-6 py-12 md:py-16 font-sans">
+
+    <!-- HEADER -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 gap-6">
+      <div>
+        <h1 class="text-[32px] font-semibold tracking-[-1.28px] text-[#171717] dark:text-[#ffffff] leading-[40px] mb-2">
+          Inventory
+        </h1>
+        <p class="text-[16px] text-[#4d4d4d] dark:text-[#a1a1a1] font-normal leading-[24px]">
+          Live stock levels across all domains. Updates automatically as requests are processed.
+        </p>
+      </div>
+      <button
+        id="refreshBtn"
+        class="h-[48px] inline-flex items-center gap-2 justify-center bg-[#171717] dark:bg-[#ffffff] text-[#ffffff] dark:text-[#171717] rounded-full px-[20px] font-medium text-[16px] leading-[24px] transition-colors hover:opacity-90 shrink-0"
+      >
+        <svg id="refreshIcon" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Refresh
+      </button>
+    </div>
+
+    <!-- LAST UPDATED -->
+    <p id="lastUpdated" class="text-[12px] text-[#a1a1a1] dark:text-[#666] mb-8 font-mono"></p>
+
+    <!-- LOADING STATE -->
+    <div id="loadingState" class="flex flex-col items-center justify-center py-24 gap-4">
+      <div class="w-8 h-8 rounded-full border-2 border-[#0070f3] border-t-transparent animate-spin"></div>
+      <p class="text-[14px] text-[#a1a1a1]">Loading inventory...</p>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div id="errorState" class="hidden flex flex-col items-center justify-center py-24 gap-3">
+      <svg class="w-10 h-10 text-[#ee0000]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+      </svg>
+      <p class="text-[14px] text-[#ee0000] font-medium">Failed to load inventory</p>
+      <p class="text-[12px] text-[#a1a1a1]">Make sure the backend is running on port 8000.</p>
+    </div>
+
+    <!-- INVENTORY CONTENT -->
+    <div id="inventoryContent" class="hidden space-y-10">
+
+      <!-- SUMMARY METRICS -->
+      <div id="summaryMetrics" class="grid grid-cols-2 md:grid-cols-4 gap-[16px]"></div>
+
+      <!-- DOMAIN SECTIONS -->
+      <div id="domainSections"></div>
+
+    </div>
+  </div>
+</Layout>
+
+<script>
+  const API = 'http://localhost:8000/inventory';
+
+  // Stock level thresholds
+  const LOW_THRESHOLD = 10;
+  const CRITICAL_THRESHOLD = 3;
+
+  function getStockStatus(qty: number) {
+    if (qty === 0) return { label: 'Out of Stock', color: '#ee0000', bg: 'bg-[#fff0f0] dark:bg-[#ee0000]/10', border: 'border-[#ffcccc] dark:border-[#ee0000]/30', badge: 'bg-[#ee0000] text-white' };
+    if (qty <= CRITICAL_THRESHOLD) return { label: 'Critical', color: '#ee0000', bg: 'bg-[#fff0f0] dark:bg-[#ee0000]/10', border: 'border-[#ffcccc] dark:border-[#ee0000]/30', badge: 'bg-[#ee0000] text-white' };
+    if (qty <= LOW_THRESHOLD) return { label: 'Low Stock', color: '#f5a623', bg: 'bg-[#fff8ee] dark:bg-[#f5a623]/10', border: 'border-[#ffe4b0] dark:border-[#f5a623]/30', badge: 'bg-[#f5a623] text-white' };
+    return { label: 'In Stock', color: '#00a550', bg: 'bg-[#f0fff8] dark:bg-[#00a550]/10', border: 'border-[#b0f0d8] dark:border-[#00a550]/30', badge: 'bg-[#00a550] text-white' };
+  }
+
+  function getDomainIcon(domain: string) {
+    if (domain === 'lab') return `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>`;
+    if (domain === 'restaurant') return `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>`;
+    return `<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>`;
+  }
+
+  function buildProgressBar(qty: number, max: number) {
+    const pct = max === 0 ? 0 : Math.min(100, Math.round((qty / max) * 100));
+    const status = getStockStatus(qty);
+    const color = qty === 0 ? '#ee0000' : qty <= CRITICAL_THRESHOLD ? '#ee0000' : qty <= LOW_THRESHOLD ? '#f5a623' : '#0070f3';
+    return `
+      <div class="flex items-center gap-2 mt-1">
+        <div class="flex-1 h-1.5 bg-[#f0f0f0] dark:bg-[#333] rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-500" style="width:${pct}%; background:${color}"></div>
+        </div>
+        <span class="text-[11px] font-mono text-[#a1a1a1] w-8 text-right">${pct}%</span>
+      </div>`;
+  }
+
+  function renderInventory(data: Record<string, Record<string, number>>) {
+    const domains = Object.keys(data);
+
+    // --- Summary metrics ---
+    let totalItems = 0, outOfStock = 0, lowStock = 0, totalDomains = domains.length;
+    for (const domain of domains) {
+      for (const [, qty] of Object.entries(data[domain])) {
+        totalItems++;
+        if (qty === 0) outOfStock++;
+        else if (qty <= LOW_THRESHOLD) lowStock++;
+      }
+    }
+
+    document.getElementById('summaryMetrics')!.innerHTML = `
+      <div class="bg-[#ffffff] dark:bg-[#111] rounded-[8px] p-[24px] shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.05),0_2px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.14)]">
+        <div class="text-[#4d4d4d] dark:text-[#888888] font-mono text-[12px] leading-[16px] mb-2 uppercase">Domains</div>
+        <div class="text-[24px] font-semibold tracking-[-0.96px] text-[#171717] dark:text-[#ffffff] leading-[32px]">${totalDomains}</div>
+      </div>
+      <div class="bg-[#ffffff] dark:bg-[#111] rounded-[8px] p-[24px] shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.05),0_2px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.14)]">
+        <div class="text-[#4d4d4d] dark:text-[#888888] font-mono text-[12px] leading-[16px] mb-2 uppercase">Total Items</div>
+        <div class="text-[24px] font-semibold tracking-[-0.96px] text-[#171717] dark:text-[#ffffff] leading-[32px]">${totalItems}</div>
+      </div>
+      <div class="bg-[#ffffff] dark:bg-[#111] rounded-[8px] p-[24px] shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.05),0_2px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.14)]">
+        <div class="text-[#4d4d4d] dark:text-[#888888] font-mono text-[12px] leading-[16px] mb-2 uppercase">Low Stock</div>
+        <div class="text-[24px] font-semibold tracking-[-0.96px] text-[#f5a623] leading-[32px]">${lowStock}</div>
+      </div>
+      <div class="bg-[#ffffff] dark:bg-[#111] rounded-[8px] p-[24px] shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.05),0_2px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.14)]">
+        <div class="text-[#4d4d4d] dark:text-[#888888] font-mono text-[12px] leading-[16px] mb-2 uppercase">Out of Stock</div>
+        <div class="text-[24px] font-semibold tracking-[-0.96px] text-[#ee0000] leading-[32px]">${outOfStock}</div>
+      </div>
+    `;
+
+    // --- Domain sections ---
+    let sectionsHTML = '';
+    for (const domain of domains) {
+      const items = data[domain];
+      const entries = Object.entries(items);
+      const maxQty = Math.max(...entries.map(([, q]) => q), 1);
+      const domainTotal = entries.reduce((s, [, q]) => s + q, 0);
+      const domainOut = entries.filter(([, q]) => q === 0).length;
+
+      const itemsHTML = entries.map(([name, qty]) => {
+        const status = getStockStatus(qty);
+        const bar = buildProgressBar(qty, maxQty);
+        return `
+          <div class="bg-[#ffffff] dark:bg-[#111] rounded-[8px] p-[20px] shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.05),0_2px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.12),0_4px_8px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_0_0_1px_rgba(255,255,255,0.2)] transition-shadow">
+            <div class="flex items-start justify-between gap-2 mb-3">
+              <span class="text-[14px] font-medium text-[#171717] dark:text-[#ffffff] leading-[20px]">${name}</span>
+              <span class="text-[11px] font-semibold px-[8px] py-[2px] rounded-full shrink-0 ${status.badge}">${status.label}</span>
+            </div>
+            <div class="text-[28px] font-semibold tracking-[-1px] text-[#171717] dark:text-[#ffffff] leading-none mb-1">${qty.toLocaleString()}</div>
+            <div class="text-[12px] text-[#a1a1a1] mb-2">units available</div>
+            ${bar}
+          </div>`;
+      }).join('');
+
+      sectionsHTML += `
+        <div class="mb-10">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-md">
+              ${getDomainIcon(domain)}
+            </div>
+            <div>
+              <h2 class="text-[20px] font-semibold tracking-[-0.5px] text-[#171717] dark:text-[#ffffff] capitalize">${domain}</h2>
+              <p class="text-[12px] text-[#a1a1a1] font-mono">${entries.length} items · ${domainTotal.toLocaleString()} total units${domainOut > 0 ? ` · <span class="text-[#ee0000]">${domainOut} out of stock</span>` : ''}</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-[16px]">
+            ${itemsHTML}
+          </div>
+        </div>`;
+    }
+
+    document.getElementById('domainSections')!.innerHTML = sectionsHTML;
+  }
+
+  async function loadInventory() {
+    const loading = document.getElementById('loadingState')!;
+    const error = document.getElementById('errorState')!;
+    const content = document.getElementById('inventoryContent')!;
+    const lastUpdated = document.getElementById('lastUpdated')!;
+    const refreshIcon = document.getElementById('refreshIcon')!;
+
+    loading.classList.remove('hidden');
+    error.classList.add('hidden');
+    content.classList.add('hidden');
+    refreshIcon.classList.add('animate-spin');
+
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      renderInventory(data);
+
+      loading.classList.add('hidden');
+      content.classList.remove('hidden');
+
+      const now = new Date();
+      lastUpdated.textContent = `Last updated: ${now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} IST`;
+    } catch (e) {
+      loading.classList.add('hidden');
+      error.classList.remove('hidden');
+      console.error('Inventory fetch failed:', e);
+    } finally {
+      refreshIcon.classList.remove('animate-spin');
+    }
+  }
+
+  // Initial load
+  loadInventory();
+
+  // Auto-refresh every 30 seconds
+  setInterval(loadInventory, 30_000);
+
+  // Manual refresh button
+  document.getElementById('refreshBtn')!.addEventListener('click', loadInventory);
+</script>

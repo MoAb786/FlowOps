@@ -1,20 +1,19 @@
 {
   "lab": {
-    "Arduino Uno": 20,
+    "Arduino Uno": 17,
     "Breadboard": 30,
-    "LED": 200,
+    "LED": 194,
     "Resistor": 500,
     "Capacitor": 300,
     "Raspberry Pi": 10,
     "Oscilloscope": 5,
     "Multimeter": 8,
     "Jumper Wires": 150,
-    "Servo Motor": 15,
-    "LEDs": 0
+    "Servo Motor": 15
   },
   "restaurant": {
-    "Burger": 50,
-    "Pizza": 30,
+    "Burger": 47,
+    "Pizza": 28,
     "Sandwich": 40,
     "Pasta": 25,
     "Coffee": 100,
