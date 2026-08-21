@@ -1,7 +1,6 @@
 import json
 import threading
 from pathlib import Path
-from telegram_helper import send_telegram, now_ist
 
 # ---------------------------------------------------------------------------
 # Inventory store — backend/data/inventory.json
@@ -102,22 +101,13 @@ def execute(request: dict) -> dict:
             f"({ch['quantity']} {direction}) | Request: {request_id}"
         )
 
-    # ---- 2. Send Telegram notification ----
-    item_lines = "\n".join(f"  \u2022 {ch['quantity']}x {ch['name']}" for ch in changes)
-    verb = "issued to" if event_type == "issue component" else "returned by"
-    short_id = str(request_id)[:8].upper()
-    reason = details.get("reason", "")
-    reason_line = f"\n\U0001f4dd Reason: {reason}" if reason else ""
-
-    tg_message = (
-        f"\u2705 <b>Lab Request Approved</b>\n"
-        f"\U0001f516 Request ID: {short_id}\n"
-        f"\U0001f464 {verb.capitalize()}: {sender_id}\n"
-        f"\U0001f4e6 Items:\n{item_lines}"
-        f"{reason_line}\n"
-        f"\U0001f550 {now_ist()}"
-    )
-    send_telegram(tg_message)
+    # ---- 2. Log inventory changes ----
+    for ch in changes:
+        direction = "issued" if event_type == "issue component" else "returned"
+        print(
+            f"[Lab Inventory] {ch['name']}: {ch['before']} → {ch['after']} "
+            f"({ch['quantity']} {direction}) | Request: {request_id}"
+        )
 
     return {
         "status": "success",

@@ -14,14 +14,14 @@ import uvicorn
 async def lifespan(app: FastAPI):
     # Startup: Start the background poller
     async def poller_loop():
-        print("[System] Background Notion Poller started.")
+        print("[System] Background Notion Poller started (interval: 10s).")
         while True:
             try:
                 await poll_notion_updates()
             except Exception as e:
                 print(f"[Poller Loop Error] {e}")
-            await asyncio.sleep(20) # Poll every 20 seconds
-            
+            await asyncio.sleep(10)  # Poll every 10 seconds
+
     task = asyncio.create_task(poller_loop())
     yield
     # Shutdown
@@ -61,7 +61,7 @@ async def submit_request(request: Request):
     raw_text = data.get("text")
     domain = data.get("domain", "lab")
     sender_id = data.get("sender_id", "unknown")
-    
+
     result = await handle_new_request(raw_text, domain, sender_id)
     return result
 
@@ -70,6 +70,27 @@ async def notion_webhook(request: Request):
     payload = await request.json()
     await process_notion_webhook(payload)
     return {"status": "received"}
+
+@app.post("/webhooks/notion/debug")
+async def notion_webhook_debug(request: Request):
+    """
+    Debug endpoint — logs and returns the raw Notion Automation payload.
+    Point your Notion Automation here first to see what payload shape Notion sends.
+    """
+    payload = await request.json()
+    import json
+    print(f"[Webhook DEBUG] Full payload:\n{json.dumps(payload, indent=2)}")
+    return {"status": "received", "payload_received": payload}
+
+@app.get("/poll/trigger")
+async def trigger_poll():
+    """
+    Manually fire one poll cycle immediately.
+    Open http://localhost:8000/poll/trigger in your browser to force a check right now.
+    """
+    print("[Poll] Manual trigger fired.")
+    await poll_notion_updates()
+    return {"status": "poll completed — check backend terminal for results"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

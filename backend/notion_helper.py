@@ -3,7 +3,7 @@ import json
 import re
 from datetime import datetime
 from notion_client import AsyncClient
-from telegram_helper import send_telegram, now_ist
+from telegram_helper import send_telegram, now_ist, build_status_notification
 
 def clean_notion_id(raw_id: str) -> str:
     """
@@ -152,34 +152,15 @@ async def create_pending_card(request_record: dict, processed: bool = False):
 
         # --- Telegram notification for new submissions ---
         status = request_record.get("status", "Pending")
-        if status == "Pending":
-            details_dict = request_record.get("details", {})
-            items = details_dict.get("items", [])
-            item_lines = "\n".join(
-                f"  \u2022 {i.get('quantity', '?')}x {i.get('name', '?')}" for i in items
-            ) if items else "  (see Notion for details)"
-            risk = request_record.get("risk_level", "")
-            risk_emoji = "\U0001f7e1" if risk == "MEDIUM" else "\U0001f534" if risk == "HIGH" else "\u26aa"
-            short_id = str(request_record.get("request_id", ""))[:8].upper()
-            sender = request_record.get("sender_id", "unknown")
-            domain = request_record.get("domain", "").capitalize()
+        notifiable_statuses = {"Pending", "Needs Clarification", "Approved", "Denied"}
+        if status in notifiable_statuses:
             send_telegram(
-                f"\u23f3 <b>New {domain} Request — Pending Review</b>\n"
-                f"\U0001f516 Request ID: {short_id}\n"
-                f"\U0001f464 From: {sender}\n"
-                f"\U0001f4e6 Items:\n{item_lines}\n"
-                f"{risk_emoji} Risk: {risk}\n"
-                f"\U0001f550 {now_ist()}"
-            )
-        elif status == "Needs Clarification":
-            short_id = str(request_record.get("request_id", ""))[:8].upper()
-            sender = request_record.get("sender_id", "unknown")
-            send_telegram(
-                f"\u2753 <b>Request Needs Clarification</b>\n"
-                f"\U0001f516 Request ID: {short_id}\n"
-                f"\U0001f464 From: {sender}\n"
-                f"\U0001f4dd The request was unclear. Please follow up.\n"
-                f"\U0001f550 {now_ist()}"
+                build_status_notification(
+                    status=status,
+                    request_id=request_record.get("request_id", ""),
+                    sender_id=request_record.get("sender_id", "unknown"),
+                    details=request_record.get("details", {}),
+                )
             )
 
         return {"status": "success", "notion_id": response.get("id"), "record": request_record}
@@ -262,12 +243,29 @@ async def update_card_status_and_process(page_id: str, status: str, processed: b
 
 async def process_notion_webhook(payload: dict):
     """
-    Triggered when a page property updates in Notion.
+    Triggered when a page property updates in Notion via Automation or webhook.
+
+    Notion Automation payloads nest the page under payload["data"].
+    Direct API webhooks may put page_id at the top level.
+    We try all known shapes so this works regardless of integration method.
     """
     try:
-        page_id = payload.get("page_id") or payload.get("id")
+        import json as _json
+        print(f"[Webhook] Raw payload received: {_json.dumps(payload)[:500]}")
+
+        # --- Extract page_id from all known Notion payload shapes ---
+        # Shape 1: Notion Automation  → payload["data"]["id"]
+        # Shape 2: Notion API webhook → payload["entity"]["id"]  or payload["page_id"]
+        # Shape 3: Manual / direct    → payload["id"]
+        page_id = (
+            (payload.get("data") or {}).get("id")
+            or (payload.get("entity") or {}).get("id")
+            or payload.get("page_id")
+            or payload.get("id")
+        )
+
         if not page_id:
-            print("[Webhook] No page_id found in webhook payload")
+            print("[Webhook] No page_id found in webhook payload — check Notion Automation config")
             return
         
         page = await notion.pages.retrieve(page_id=page_id)
@@ -276,9 +274,12 @@ async def process_notion_webhook(payload: dict):
         status = properties.get("status", {}).get("select", {}).get("name")
         processed = properties.get("Processed", {}).get("checkbox", False)
         
-        if status in ["Approved", "Denied"] and not processed:
-            request_id_list = properties.get("Name", {}).get("title", [])
-            request_id = request_id_list[0]["text"]["content"] if request_id_list else "unknown"
+        # Handle all actionable statuses that have not yet been processed
+        actionable_statuses = {"Approved", "Denied", "Needs Clarification", "Pending"}
+        if status in actionable_statuses and not processed:
+            # Use page_id as the canonical request identifier (consistent with poller)
+            request_id = page_id
+
             domain = properties.get("domain", {}).get("select", {}).get("name", "lab")
             event_type = properties.get("event_type", {}).get("select", {}).get("name", "issue component")
             
@@ -301,6 +302,7 @@ async def process_notion_webhook(payload: dict):
                 "status": status
             }
             
+            # Perform domain-level action and write log for terminal statuses
             if status == "Approved":
                 await trigger_domain_action(request_record)
                 await write_run_log({
@@ -310,7 +312,7 @@ async def process_notion_webhook(payload: dict):
                     "timestamp": datetime.utcnow().isoformat(),
                     "result": "Manually Approved"
                 })
-            else:
+            elif status == "Denied":
                 await write_run_log({
                     "request_id": request_id,
                     "action_taken": event_type,
@@ -318,12 +320,25 @@ async def process_notion_webhook(payload: dict):
                     "timestamp": datetime.utcnow().isoformat(),
                     "result": "Denied"
                 })
-                send_telegram(
-                    f"\u274c <b>Request Denied</b>\n"
-                    f"\U0001f516 Request ID: {str(request_id)[:8].upper()}\n"
-                    f"\U0001f464 Requested by: {sender_id}\n"
-                    f"\U0001f550 {now_ist()}"
+            elif status == "Needs Clarification":
+                await write_run_log({
+                    "request_id": request_id,
+                    "action_taken": event_type,
+                    "actor": "human approver",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "result": "Needs Clarification"
+                })
+            # "Pending" — no domain action, no log; just notify
+
+            # Send Telegram notification for every status change
+            send_telegram(
+                build_status_notification(
+                    status=status,
+                    request_id=request_id,
+                    sender_id=sender_id,
+                    details=details,
                 )
+            )
             
             await update_card_status_and_process(page_id, status, processed=True)
             

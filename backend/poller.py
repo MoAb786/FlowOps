@@ -1,11 +1,13 @@
 import json
 from datetime import datetime
 from notion_helper import notion, REQUESTS_DB_ID, trigger_domain_action, write_run_log, update_card_status_and_process
-from telegram_helper import send_telegram, now_ist
+from telegram_helper import send_telegram, build_status_notification
 
 async def poll_notion_updates():
     """
-    Queries Notion Requests DB for unprocessed Approved or Denied cards.
+    Queries Notion Requests DB for unprocessed cards whose status has changed
+    to Approved, Denied, or Needs Clarification, then sends Telegram notifications
+    and performs any required domain actions.
     """
     if not REQUESTS_DB_ID:
         print("[Poller] Warning: NOTION_REQUESTS_DB_ID is not configured in .env")
@@ -21,7 +23,8 @@ async def poll_notion_updates():
                         {
                             "or": [
                                 {"property": "status", "select": {"equals": "Approved"}},
-                                {"property": "status", "select": {"equals": "Denied"}}
+                                {"property": "status", "select": {"equals": "Denied"}},
+                                {"property": "status", "select": {"equals": "Needs Clarification"}}
                             ]
                         },
                         {
@@ -35,9 +38,10 @@ async def poll_notion_updates():
         
         results = response.get("results", [])
         if not results:
+            print("[Poller] ✓ Checked Notion — no unprocessed status changes found.")
             return
             
-        print(f"[Poller] Found {len(results)} unprocessed approved/denied card(s)")
+        print(f"[Poller] Found {len(results)} unprocessed card(s) with updated status")
         
         for page in results:
             page_id = page["id"]
@@ -75,7 +79,7 @@ async def poll_notion_updates():
                 "status": status
             }
             
-            # Process based on decision
+            # Perform domain-level actions and write audit log
             if status == "Approved":
                 await trigger_domain_action(request_record)
                 await write_run_log({
@@ -85,7 +89,7 @@ async def poll_notion_updates():
                     "timestamp": datetime.utcnow().isoformat(),
                     "result": "Manually Approved"
                 })
-            else:
+            elif status == "Denied":
                 await write_run_log({
                     "request_id": request_id,
                     "action_taken": event_type,
@@ -93,15 +97,28 @@ async def poll_notion_updates():
                     "timestamp": datetime.utcnow().isoformat(),
                     "result": "Denied"
                 })
-                send_telegram(
-                    f"\u274c <b>Request Denied</b>\n"
-                    f"\U0001f516 Request ID: {str(request_id)[:8].upper()}\n"
-                    f"\U0001f464 Requested by: {sender_id}\n"
-                    f"\U0001f550 {now_ist()}"
+            elif status == "Needs Clarification":
+                await write_run_log({
+                    "request_id": request_id,
+                    "action_taken": event_type,
+                    "actor": "system poller",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "result": "Needs Clarification"
+                })
+
+            # Send Telegram notification with full request details for every status
+            send_telegram(
+                build_status_notification(
+                    status=status,
+                    request_id=request_id,
+                    sender_id=sender_id,
+                    details=details,
                 )
+            )
                 
-            # Mark the card as Processed in Notion
+            # Mark the card as Processed in Notion so it won't be re-notified
             await update_card_status_and_process(page_id, status, processed=True)
             
     except Exception as e:
         print(f"[Poller] Error in poller loop: {e}")
+
