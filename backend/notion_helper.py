@@ -25,29 +25,136 @@ notion = AsyncClient(
 REQUESTS_DB_ID = clean_notion_id(os.environ.get("NOTION_REQUESTS_DB_ID", ""))
 RUN_LOG_DB_ID = clean_notion_id(os.environ.get("NOTION_RUN_LOG_DB_ID", ""))
 
+
+# ---------------------------------------------------------------------------
+# Human-readable formatting helpers
+# ---------------------------------------------------------------------------
+
+def format_details_for_humans(details: dict) -> str:
+    """
+    Convert a structured details dict into clean bullet-point text for Notion.
+
+    Lab example output:
+        • 2x Arduino Uno
+        • 1x Breadboard
+        Reason: Lab assignment
+
+    Restaurant example output:
+        • 2x Burger
+        • 1x Coffee
+        Table: 3
+    """
+    lines = []
+
+    items = details.get("items", [])
+    for item in items:
+        qty = item.get("quantity", "?")
+        name = item.get("name", "Unknown item")
+        lines.append(f"• {qty}x {name}")
+
+    # Lab fields
+    reason = details.get("reason", "")
+    if reason:
+        lines.append(f"Reason: {reason}")
+
+    # Restaurant fields
+    table = details.get("table_number")
+    if table:
+        lines.append(f"Table: {table}")
+
+    # Fallback for unknown/empty structures
+    if not lines:
+        # Try to surface any top-level string values
+        for key, val in details.items():
+            if key not in ("items", "event_type", "needs_human_clarification") and val:
+                lines.append(f"{key.replace('_', ' ').capitalize()}: {val}")
+
+    if not lines:
+        lines.append("(No structured details available)")
+
+    return "\n".join(lines)
+
+
+def _build_card_title(request_record: dict) -> str:
+    """
+    Build a human-readable card title, e.g.:
+        Lab Request — Rohan — 2x Arduino Uno
+        Restaurant Order — Table 3 — 1x Burger, 2x Coffee
+    """
+    domain = request_record.get("domain", "unknown").capitalize()
+    sender_id = request_record.get("sender_id", "unknown")
+    details = request_record.get("details", {})
+    items = details.get("items", [])
+
+    if items:
+        # Show first item (or first two) as the summary
+        item_summaries = [f"{i.get('quantity', '?')}x {i.get('name', '?')}" for i in items[:2]]
+        item_summary = ", ".join(item_summaries)
+        if len(items) > 2:
+            item_summary += f" +{len(items) - 2} more"
+    else:
+        item_summary = "Unknown items"
+
+    # Distinguish domain phrasing
+    if domain.lower() == "restaurant":
+        table = details.get("table_number", "?")
+        return f"Restaurant Order — Table {table} — {item_summary}"
+    else:
+        return f"{domain} Request — {sender_id} — {item_summary}"
+
+
+
 async def create_pending_card(request_record: dict, processed: bool = False):
     """
     Creates a new card in the Notion Requests database.
+
+    - Card title: human-readable (e.g. "Lab Request — Rohan — 2x Arduino Uno")
+    - details property: raw JSON (preserved for webhook/poller machine-reading)
+    - Page body: human-readable bullet-point summary (visible when card is opened)
     """
     try:
+        card_title = _build_card_title(request_record)
+        details_dict = request_record.get("details", {})
+        # Keep raw JSON in property for machine reading on approval webhook
+        details_json = json.dumps(details_dict)
+        # Human-formatted body for the card page content
+        details_human = format_details_for_humans(details_dict)
+
         response = await notion.pages.create(
             parent={"database_id": REQUESTS_DB_ID},
             properties={
-                "Name": {"title": [{"text": {"content": request_record["request_id"]}}]},
+                "Name": {"title": [{"text": {"content": card_title}}]},
                 "domain": {"select": {"name": request_record.get("domain", "lab")}},
                 "sender_id": {"rich_text": [{"text": {"content": request_record.get("sender_id", "")}}]},
                 "status": {"select": {"name": request_record["status"]}},
                 "risk_level": {"select": {"name": request_record.get("risk_level", "Normal")}},
                 "event_type": {"select": {"name": request_record.get("event_type", "issue component")}},
-                "details": {"rich_text": [{"text": {"content": json.dumps(request_record.get("details", {}))}}]},
+                "details": {"rich_text": [{"text": {"content": details_json}}]},
                 "Processed": {"checkbox": processed}
-            }
+            },
+            children=[
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": details_human}
+                            }
+                        ]
+                    }
+                }
+            ]
         )
         print(f"[Notion] Created Card successfully: {response.get('id')}")
         return {"status": "success", "notion_id": response.get("id"), "record": request_record}
     except Exception as e:
         print(f"[Notion] Error creating card: {e}")
         return {"status": "error", "error": str(e), "record": request_record}
+
+
+
 
 async def auto_approve_and_log(request_record: dict):
     """
@@ -76,15 +183,22 @@ async def write_run_log(log_entry: dict):
         if not RUN_LOG_DB_ID:
             print("[Notion] Warning: NOTION_RUN_LOG_DB_ID is not configured in .env")
             return {"status": "skipped"}
-            
+
+        # Build a human-readable log title, e.g.:
+        #   "Auto-Approved — issue component — system"
+        result_label = log_entry.get("result", "Auto-Approved")
+        action_label = log_entry.get("action_taken", "")
+        actor_label = log_entry.get("actor", "system")
+        log_title = f"{result_label} — {action_label} — {actor_label}"
+
         response = await notion.pages.create(
             parent={"database_id": RUN_LOG_DB_ID},
             properties={
-                "Name": {"title": [{"text": {"content": log_entry["request_id"]}}]},
-                "action_taken": {"rich_text": [{"text": {"content": log_entry.get("action_taken", "")}}]},
-                "actor": {"rich_text": [{"text": {"content": log_entry.get("actor", "system")}}]},
+                "Name": {"title": [{"text": {"content": log_title}}]},
+                "action_taken": {"rich_text": [{"text": {"content": action_label}}]},
+                "actor": {"rich_text": [{"text": {"content": actor_label}}]},
                 "timestamp": {"date": {"start": log_entry.get("timestamp", datetime.utcnow().isoformat())}},
-                "result": {"select": {"name": log_entry.get("result", "Auto-Approved")}}
+                "result": {"select": {"name": result_label}}
             }
         )
         print(f"[Notion] Logged run successfully: {response.get('id')}")
@@ -92,6 +206,7 @@ async def write_run_log(log_entry: dict):
     except Exception as e:
         print(f"[Notion] Error writing run log: {e}")
         return {"status": "error", "error": str(e)}
+
 
 async def update_card_status_and_process(page_id: str, status: str, processed: bool = True):
     """

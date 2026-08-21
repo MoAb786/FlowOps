@@ -1,24 +1,42 @@
 ---
 import Layout from '../layouts/Layout.astro';
 ---
-<Layout title="Dashboard - FlowOps">
+<Layout title="My Requests — FlowOps">
   <div class="max-w-[1400px] mx-auto px-4 md:px-6 py-12 md:py-16 font-sans">
     
     <!-- HEADER SECTION -->
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-12 gap-6">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-6 gap-6">
       <div>
         <h1 class="text-[32px] font-semibold tracking-[-1.28px] text-[#171717] dark:text-[#ffffff] leading-[40px] mb-2">
-          Dashboard
+          My Requests
         </h1>
         <p class="text-[16px] text-[#4d4d4d] dark:text-[#a1a1a1] font-normal leading-[24px]">
-          Track and manage all your requests in one place.
+          Track the status of requests you have submitted.
         </p>
       </div>
-      <!-- Primary Marketing Pill CTA -->
+      <!-- Link back to submission form; management/approval happens exclusively in Notion -->
       <a href="/" class="h-[48px] inline-flex items-center justify-center bg-[#171717] dark:bg-[#ffffff] text-[#ffffff] dark:text-[#171717] rounded-full px-[16px] font-medium text-[16px] leading-[24px] transition-colors hover:opacity-90 shrink-0">
-        + New Request
+        + Submit New Request
       </a>
     </div>
+
+    <!-- READ-ONLY TRACKING NOTICE -->
+    <!--
+      IMPORTANT: This dashboard is a READ-ONLY requester tracking view.
+      Requesters can see the current status of their submissions here.
+      All approval, rejection, and management actions happen exclusively
+      inside Notion — never through this interface.
+    -->
+    <div class="mb-8 flex items-start gap-3 bg-[#f0f7ff] dark:bg-[#0070f3]/10 border border-[#c2deff] dark:border-[#0070f3]/30 rounded-[8px] px-[16px] py-[12px]">
+      <svg class="w-5 h-5 text-[#0070f3] dark:text-[#3291ff] shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <p class="text-[14px] text-[#0761d1] dark:text-[#3291ff] leading-[20px]">
+        <span class="font-semibold">Tracking view only.</span>
+        This page shows the live status of your submitted requests. All approvals and management actions are handled exclusively inside Notion by authorized operators.
+      </p>
+    </div>
+
 
     <!-- SUMMARY METRICS -->
     <div id="metrics-container" class="grid grid-cols-2 md:grid-cols-4 gap-[16px] mb-[32px] hidden">

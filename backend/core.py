@@ -7,8 +7,10 @@ from datetime import datetime
 async def handle_new_request(raw_text: str, domain: str, sender_id: str):
     # 1. PARSE
     parsed_data = parse_request(raw_text, domain)
-    
+    print(f"[Core] Parsed data: {parsed_data}")
+
     if parsed_data.get("needs_human_clarification"):
+        print(f"[Core] needs_human_clarification=True → creating 'Needs Clarification' card")
         # Handle ambiguous input
         return await create_pending_card({
             "request_id": str(uuid.uuid4()),
@@ -21,6 +23,7 @@ async def handle_new_request(raw_text: str, domain: str, sender_id: str):
 
     # 2. ROUTE
     risk_level, mapped_approver = route_request(parsed_data, domain)
+    print(f"[Core] risk_level={risk_level!r}, approver={mapped_approver!r}")
 
     request_record = {
         "request_id": str(uuid.uuid4()),
@@ -35,9 +38,10 @@ async def handle_new_request(raw_text: str, domain: str, sender_id: str):
     }
 
     # 3. APPROVAL OR EXECUTION
-    if risk_level == "Normal":
+    if risk_level == "NORMAL":
+        print(f"[Core] NORMAL risk → auto-approving")
         request_record["status"] = "Auto-Approved"
         return await auto_approve_and_log(request_record)
     else:
-        # High risk, needs human
+        print(f"[Core] {risk_level} risk → creating pending card for human review")
         return await create_pending_card(request_record)

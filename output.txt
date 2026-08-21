@@ -1,0 +1,84 @@
+(venv) PS C:\Users\mansi\HACKATHONs\Group\FlowOps\backend> python main.py         
+INFO:     Will watch for changes in these directories: ['C:\\Users\\mansi\\HACKATHONs\\Group\\FlowOps\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [21644] using StatReload
+INFO:     Started server process [6848]
+INFO:     Waiting for application startup.
+[System] Background Notion Poller started.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:61245 - "GET /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61024 - "OPTIONS /requests HTTP/1.1" 200 OK
+
+Trying Groq: openai/gpt-oss-20b
+Success using Groq: openai/gpt-oss-20b
+
+Trying Groq: openai/gpt-oss-20b
+Success using Groq: openai/gpt-oss-20b
+[Notion] Created Card successfully: 3c39eee0-5447-81fd-bdd6-e4de6ec65b81
+INFO:     127.0.0.1:61024 - "POST /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56340 - "GET /requests HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'core.py'. Reloading...
+ INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [6848]
+WARNING:  StatReload detected changes in 'actions\lab.py'. Reloading...
+ Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=21644, pipe_handle=576)
+                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 131, in _main
+    prepare(preparation_data)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+    ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\multiprocessing\spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                                  run_name="__mp_main__")
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\main.py", line 1, in <module>
+    from dotenv import load_dotenv
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\dotenv\__init__.py", line 3, in <module>
+    from .main import dotenv_values, find_dotenv, get_key, load_dotenv, set_key, unset_key
+  File "C:\Users\mansi\HACKATHONs\Group\FlowOps\backend\venv\Lib\site-packages\dotenv\main.py", line 2, in <module>
+    import logging
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\logging\__init__.py", line 26, in <module>
+    import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
+  File "C:\Users\mansi\AppData\Local\Python\pythoncore-3.14-64\Lib\traceback.py", line 7, in <module>
+    import textwrap
+  File "<frozen importlib._bootstrap>", line 1371, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1342, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 938, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 758, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 854, in get_code
+  File "<frozen importlib._bootstrap_external>", line 954, in get_data
+KeyboardInterrupt
+INFO:     Started server process [19604]
+INFO:     Waiting for application startup.
+[System] Background Notion Poller started.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [19604]
+INFO:     Stopping reloader process [21644]
+(venv) PS C:\Users\mansi\HACKATHONs\Group\FlowOps\backend> python main.py
+INFO:     Will watch for changes in these directories: ['C:\\Users\\mansi\\HACKATHONs\\Group\\FlowOps\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [7948] using StatReload
+INFO:     Started server process [14488]
+INFO:     Waiting for application startup.
+[System] Background Notion Poller started.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:61030 - "OPTIONS /requests HTTP/1.1" 200 OK
+
+Trying Groq: openai/gpt-oss-20b
+Success using Groq: openai/gpt-oss-20b
+[Notion] Created Card successfully: 3c39eee0-5447-81fe-b6a0-f69222990f3f
+INFO:     127.0.0.1:61030 - "POST /requests HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54334 - "GET /requests HTTP/1.1" 200 OK
