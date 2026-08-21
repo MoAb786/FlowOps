@@ -2,9 +2,64 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-primary: var(--brand-primary);
+  --color-on-primary: var(--brand-on-primary);
+  --color-ink: var(--brand-ink);
+  --color-body: var(--brand-body);
+  --color-mute: var(--brand-mute);
+  --color-hairline: var(--brand-hairline);
+  --color-canvas: var(--brand-canvas);
+  --color-canvas-soft: var(--brand-canvas-soft);
+  
+  /* Semantic */
+  --color-success: #0070f3;
+  --color-error: #ee0000;
+  --color-error-soft: var(--brand-error-soft);
+  --color-warning: #f5a623;
+  --color-warning-soft: var(--brand-warning-soft);
+
+  --font-geist: Geist, Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: Geist Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+
+  /* We override Tailwind's default sans and mono */
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-mono);
+}
+
 @layer base {
+  :root {
+    --brand-primary: #171717;
+    --brand-on-primary: #ffffff;
+    --brand-ink: #171717;
+    --brand-body: #4d4d4d;
+    --brand-mute: #888888;
+    --brand-hairline: #ebebeb;
+    --brand-canvas: #ffffff;
+    --brand-canvas-soft: #fafafa;
+    
+    --brand-error-soft: #f7d4d6;
+    --brand-warning-soft: #ffefcf;
+  }
+
+  .dark {
+    --brand-primary: #ffffff;
+    --brand-on-primary: #171717;
+    --brand-ink: #ffffff;
+    --brand-body: #a1a1a1;
+    --brand-mute: #888888;
+    --brand-hairline: #333333;
+    --brand-canvas: #0a0a0a;
+    --brand-canvas-soft: #111111;
+    
+    --brand-error-soft: rgba(238, 0, 0, 0.2);
+    --brand-warning-soft: rgba(245, 166, 35, 0.2);
+  }
+
   body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: var(--brand-canvas-soft);
+    color: var(--brand-ink);
   }
 }

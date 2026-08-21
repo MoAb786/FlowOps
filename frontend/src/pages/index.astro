@@ -4,40 +4,40 @@ import RequestForm from '../components/RequestForm.astro';
 ---
 
 <Layout title="FlowOps - Request Engine">
-  <div class="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+  <div class="grid lg:grid-cols-12 gap-[48px] lg:gap-[64px] items-center font-sans">
     <!-- Left Section -->
-    <div class="lg:col-span-5 flex flex-col gap-8 order-2 lg:order-1">
+    <div class="lg:col-span-5 flex flex-col gap-[32px] order-2 lg:order-1">
       <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-6">
+        <div class="inline-flex items-center gap-[8px] px-[12px] py-[4px] rounded-full bg-canvas-soft border border-hairline text-body font-mono text-[12px] leading-[16px] uppercase tracking-normal mb-[24px]">
           <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L15 9h7l-5.5 4.5L18 21l-6-4.5L6 21l1.5-7.5L2 9h7z"/></svg>
           Intelligent Request Routing
         </div>
-        <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
+        <h1 class="text-[48px] font-semibold tracking-[-2.4px] text-ink leading-[48px]">
           You focus on<br/>the need.<br/>
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400">We handle the rest.</span>
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#007cf0] to-[#00dfd8]">We handle the rest.</span>
         </h1>
-        <p class="mt-6 text-lg text-slate-600 dark:text-slate-400 leading-relaxed max-w-md">
+        <p class="mt-[24px] text-[18px] text-body font-normal leading-[28px] max-w-md">
           Submit your request in plain English. We'll take care of the routing, approvals, and keep you updated.
         </p>
       </div>
       
       <!-- Subtle Workflow Visualization -->
-      <div class="relative w-full max-w-sm mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800/80 shadow-sm mt-4 hidden sm:block">
+      <div class="relative w-full max-w-sm mx-auto p-[32px] rounded-[12px] bg-canvas border border-hairline shadow-[0_0_0_1px_rgba(0,0,0,0.08),0_1px_1px_rgba(0,0,0,0.05),0_2px_2px_rgba(0,0,0,0.05)] dark:shadow-[0_0_0_1px_rgba(255,255,255,0.14)] mt-[16px] hidden sm:block">
         <svg viewBox="0 0 300 280" class="w-full h-auto overflow-visible" xmlns="http://www.w3.org/2000/svg">
           <!-- Lines -->
           <!-- Vertical line Lab -> Engine -->
-          <line x1="150" y1="40" x2="150" y2="120" stroke="currentColor" class="text-indigo-200 dark:text-indigo-900/60" stroke-width="2" stroke-dasharray="4 4"/>
+          <line x1="150" y1="40" x2="150" y2="120" stroke="currentColor" class="text-mute" stroke-width="2" stroke-dasharray="4 4"/>
           
           <!-- Diagonal line Engine -> Approvals -->
-          <line x1="150" y1="160" x2="70" y2="240" stroke="currentColor" class="text-indigo-200 dark:text-indigo-900/60" stroke-width="2" stroke-dasharray="4 4"/>
+          <line x1="150" y1="160" x2="70" y2="240" stroke="currentColor" class="text-mute" stroke-width="2" stroke-dasharray="4 4"/>
           
           <!-- Diagonal line Engine -> Notifications -->
-          <line x1="150" y1="160" x2="230" y2="240" stroke="currentColor" class="text-indigo-200 dark:text-indigo-900/60" stroke-width="2" stroke-dasharray="4 4"/>
+          <line x1="150" y1="160" x2="230" y2="240" stroke="currentColor" class="text-mute" stroke-width="2" stroke-dasharray="4 4"/>
 
           <!-- Lab Equipment Node -->
           <g transform="translate(150, 20)">
-            <rect x="-80" y="-18" width="160" height="36" rx="18" fill="currentColor" class="text-slate-50 dark:text-slate-800 stroke-slate-200 dark:stroke-slate-700" stroke-width="1"/>
-            <text x="0" y="5" text-anchor="middle" class="text-[13px] font-medium fill-slate-700 dark:fill-slate-300" style="font-family: inherit;">Lab Equipment</text>
+            <rect x="-80" y="-18" width="160" height="36" rx="18" fill="currentColor" class="text-canvas-soft stroke-hairline" stroke-width="1"/>
+            <text x="0" y="4" text-anchor="middle" class="text-[12px] font-mono fill-ink">LAB EQUIPMENT</text>
           </g>
 
           <!-- FlowOps Engine Node -->
@@ -45,28 +45,27 @@ import RequestForm from '../components/RequestForm.astro';
             <!-- Gradient definition -->
             <defs>
               <linearGradient id="flowOpsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#6366f1" />
-                <stop offset="100%" stop-color="#7c3aed" />
+                <stop offset="0%" stop-color="#007cf0" />
+                <stop offset="100%" stop-color="#00dfd8" />
               </linearGradient>
             </defs>
-            <!-- Subtle shadow underneath -->
-            <rect x="-85" y="-22" width="170" height="44" rx="22" fill="#6366f1" opacity="0.2" filter="blur(8px)" transform="translate(0, 4)"/>
+            <rect x="-85" y="-22" width="170" height="44" rx="22" fill="#007cf0" opacity="0.2" filter="blur(8px)" transform="translate(0, 4)"/>
             <rect x="-85" y="-22" width="170" height="44" rx="22" fill="url(#flowOpsGrad)"/>
-            <text x="0" y="5" text-anchor="middle" class="text-[14px] font-semibold fill-white" style="font-family: inherit;">FlowOps Engine</text>
+            <text x="0" y="5" text-anchor="middle" class="text-[14px] font-semibold fill-white">FlowOps Engine</text>
           </g>
 
           <!-- Approvals Node -->
           <g transform="translate(70, 260)">
-            <rect x="-65" y="-18" width="130" height="36" rx="18" fill="currentColor" class="text-slate-50 dark:text-slate-800 stroke-slate-200 dark:stroke-slate-700" stroke-width="1"/>
-            <circle cx="-45" cy="0" r="4" fill="#10B981" />
-            <text x="5" y="4" text-anchor="middle" class="text-[12px] font-medium fill-slate-700 dark:fill-slate-300" style="font-family: inherit;">Approvals</text>
+            <rect x="-65" y="-18" width="130" height="36" rx="18" fill="currentColor" class="text-canvas-soft stroke-hairline" stroke-width="1"/>
+            <circle cx="-45" cy="0" r="4" fill="#0070f3" />
+            <text x="5" y="4" text-anchor="middle" class="text-[12px] font-mono fill-ink">APPROVALS</text>
           </g>
 
           <!-- Notifications Node -->
           <g transform="translate(230, 260)">
-            <rect x="-65" y="-18" width="130" height="36" rx="18" fill="currentColor" class="text-slate-50 dark:text-slate-800 stroke-slate-200 dark:stroke-slate-700" stroke-width="1"/>
-            <circle cx="-45" cy="0" r="4" fill="#3B82F6" />
-            <text x="5" y="4" text-anchor="middle" class="text-[12px] font-medium fill-slate-700 dark:fill-slate-300" style="font-family: inherit;">Notifications</text>
+            <rect x="-65" y="-18" width="130" height="36" rx="18" fill="currentColor" class="text-canvas-soft stroke-hairline" stroke-width="1"/>
+            <circle cx="-45" cy="0" r="4" fill="#00dfd8" />
+            <text x="5" y="4" text-anchor="middle" class="text-[12px] font-mono fill-ink">NOTIFICATIONS</text>
           </g>
         </svg>
       </div>
