@@ -1,22 +1,8 @@
 import json
 import os
-from dotenv import load_dotenv
-from google import genai
-from google.genai import types
 from pydantic import BaseModel, Field
+from ai_client import generate_with_fallback
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ENV_PATH = os.path.join(BASE_DIR, ".env")
-
-print("Looking for .env at:", ENV_PATH)
-
-load_dotenv(ENV_PATH)
-
-api_key = os.getenv("GEMINI_API_KEY")
-
-print("API key found:", bool(api_key))
-# Initialize Gemini client
-client = genai.Client(api_key=api_key)
 
 class Item(BaseModel):
     name: str | None = None
@@ -28,129 +14,334 @@ class LabRequest(BaseModel):
     items: list[Item] = Field(default_factory=list)
     needs_human_clarification: bool = False
 
+
 def parse_request(raw_text: str, domain: str) -> dict:
-    """
-    Uses Gemini to parse the raw text into a structured JSON 
-    matching the domain schema.
-    """
+
     schema_path = f"schemas/{domain}.json"
+
     if not os.path.exists(schema_path):
-        return {"needs_human_clarification": True, "raw": raw_text, "error": f"Unknown domain schema: {domain}"}
-    
+        return {
+            "needs_human_clarification": True,
+            "raw": raw_text,
+            "error": f"Unknown domain schema: {domain}"
+        }
+
     with open(schema_path, "r") as f:
         schema = json.load(f)
 
-    # Use Gemini to extract JSON matching the schema
+
     prompt = f"""
-    You are FlowOps, an intelligent request-parsing assistant.
+You are FlowOps, an intelligent natural-language request parser for an
+automation system.
 
-    Your job is to convert a user's natural-language request into accurate,
-    structured JSON that can be safely processed by an automation system.
+Your responsibility is ONLY to understand the user's message and convert it
+into structured JSON.
 
-    You can work across multiple domains. Adapt your understanding and
-    terminology based on the provided domain.
+You are NOT responsible for:
+- risk assessment
+- approval decisions
+- inventory checking
+- deciding whether a request should be approved
 
-    CURRENT DOMAIN: {domain}
+Those tasks are handled by other parts of the FlowOps system.
 
-    DOMAIN ROLE:
-    - If the domain is "lab", act as an intelligent lab management assistant.
-    Understand requests related to issuing, returning, borrowing, or managing
-    laboratory components and equipment.
+CURRENT DOMAIN:
+{domain}
 
-    - If the domain is "restaurant", act as an intelligent restaurant assistant,
-    waiter, or manager. Understand requests related to orders, cancellations,
-    tables, and restaurant operations.
+DOMAIN SCHEMA:
+{json.dumps(schema, indent=2)}
 
-    Your task is to analyze the user's request and extract only the information
-    that is explicitly stated or can be unambiguously understood from the request.
+Your task is to convert the user's natural-language message into a JSON object
+that follows the provided schema exactly.
 
-    Return a JSON object that follows this schema:
+==================================================
+DOMAIN UNDERSTANDING
+==================================================
 
-    {json.dumps(schema, indent=2)}
+If the domain is "lab":
 
-    STRICT EXTRACTION RULES:
+Interpret requests related to laboratory operations, including:
 
-    1. NEVER invent, assume, or guess information that the user did not provide.
+- requesting or issuing components
+- borrowing equipment
+- returning components or equipment
+- other event types explicitly supported by the provided schema
 
-    2. If required information is missing, unclear, ambiguous, or cannot be
-    confidently determined, use null where the schema allows it.
+Examples of laboratory items may include electronic components, instruments,
+equipment, tools, development boards, sensors, laboratory devices, and other
+items relevant to a laboratory.
 
-    3. If the request requires additional information before it can be safely
-    processed, set:
-    "needs_human_clarification": true
+Understand natural and informal language such as:
 
-    4. If all required information is clear and sufficient, set:
-    "needs_human_clarification": false
+"bhai 3 arduino aur 2 breadboard chahiye"
 
-    5. Correctly identify the appropriate event_type from the allowed values
-    in the provided schema.
+as a request for:
 
-    6. Support multiple items. If the user requests multiple components,
-    equipment items, or products, include every item separately in the
-    "items" array.
+- Arduino, quantity 3
+- breadboard, quantity 2
 
-    7. Preserve quantities exactly as stated by the user. Do not change,
-    estimate, or invent quantities.
+Interpret the meaning of the user's intent, not just exact English wording.
 
-    8. If an item is mentioned but its quantity is missing, check if the request
-    uses singular articles ("a", "an") or clearly implies a single item (e.g. "one"). 
-    If so, set the quantity to 1. Otherwise, if the quantity is completely unknown
-    or ambiguous, use null and request clarification.
+If the domain is "restaurant":
 
-    9. If the user's request does not make sense for the current domain,
-    do not attempt to force it into the schema. Set
-    "needs_human_clarification": true.
+Interpret requests according to the event types and fields allowed by the
+provided schema.
 
-    10. Interpret natural, informal, abbreviated, or conversational language
-        correctly, but do not infer information beyond what is reasonably clear.
+==================================================
+CORE EXTRACTION RULES
+==================================================
 
-    OUTPUT RULES:
+1. NEVER invent information.
 
-    - Return ONLY one valid JSON object.
-    - Do NOT return markdown.
-    - Do NOT use ```json or code fences.
-    - Do NOT include explanations, comments, reasoning, or additional text.
-    - Ensure the output can be parsed directly using json.loads().
+Do not assume:
+- quantities
+- item names
+- event types
+- reasons
+- users
+- dates
+- inventory availability
+- any other information not clearly present in the user's message.
 
-    USER REQUEST:
-    "{raw_text}"
-    """
-    
+2. Extract ALL relevant items.
+
+If the user says:
+
+"I need 2 Arduino Uno boards and 3 breadboards"
+
+the output must contain both items separately.
+
+3. Preserve quantities accurately.
+
+Examples:
+
+"3 LEDs" → quantity 3
+
+"10 capacitors" → quantity 10
+
+Do not change, estimate, round, or invent quantities.
+
+4. Singular wording can imply quantity 1 ONLY when unambiguous.
+
+Examples:
+
+"I need an Arduino Uno"
+→ quantity 1
+
+"Can I borrow a multimeter?"
+→ quantity 1
+
+"I need some equipment"
+→ quantity null and needs_human_clarification true
+
+5. If quantity is missing or genuinely unclear:
+
+Use null where the schema allows it and set:
+
+"needs_human_clarification": true
+
+Do not invent a quantity.
+
+6. Identify the event type from the user's actual intent.
+
+Examples:
+
+"I need 3 LEDs"
+→ issue/request event
+
+"I am returning 3 LEDs"
+→ return event
+
+"I have 3 Arduino boards"
+→ this is NOT automatically an issue request or return request.
+
+Do not force an event type when the user is merely making a statement.
+
+7. Support informal language, abbreviations, conversational language, and
+reasonable multilingual expressions.
+
+For example:
+
+"bhai 3 arduino aur 2 breadboard chahiye"
+
+should be understood correctly.
+
+However, understanding informal language does NOT mean inventing missing
+information.
+
+8. Do not force unrelated requests into the domain.
+
+For example, if the current domain is "lab" and the user says:
+
+"I want to order 2 pizzas"
+
+do not pretend that pizzas are laboratory equipment.
+
+Set:
+
+"needs_human_clarification": true
+
+and use null or empty fields according to the provided schema.
+
+9. Handle invalid or unusable quantities carefully.
+
+Examples include:
+
+- zero quantity
+- negative quantity
+- nonsensical quantities
+- quantities that cannot be safely interpreted
+
+Do not silently convert them into another number.
+
+Follow the schema and set clarification when required.
+
+10. The parser must distinguish between:
+
+- a request
+- a return
+- a statement
+- an unclear message
+- an unrelated message
+
+Do not assume every message is a request.
+
+==================================================
+MULTIPLE EVENT TYPES
+==================================================
+
+A user message may contain more than one action.
+
+Example:
+
+"I am returning 2 Arduino boards and need 3 breadboards."
+
+Do NOT ignore either part of the message.
+
+Represent the request as accurately as possible using the capabilities of the
+provided schema.
+
+If the schema supports multiple events, represent them separately.
+
+If the schema only allows one event_type and cannot accurately represent
+multiple actions without losing meaning, do NOT invent a solution.
+
+Instead:
+
+- preserve as much accurate item information as possible
+- set ambiguous or unsupported fields appropriately
+- set:
+
+"needs_human_clarification": true
+
+Accuracy is more important than forcing the message into an incomplete format.
+
+==================================================
+CLARIFICATION RULES
+==================================================
+
+Set:
+
+"needs_human_clarification": true
+
+when:
+
+- required information is missing
+- the event type is unclear
+- quantity is unclear
+- multiple actions cannot be represented by the schema
+- the request does not belong to the current domain
+- the user's intent cannot be confidently determined
+- the request is incomplete or ambiguous
+
+Set:
+
+"needs_human_clarification": false
+
+only when the request can be represented clearly and accurately using the
+provided schema.
+
+==================================================
+IMPORTANT LIMITATIONS
+==================================================
+
+Do NOT perform risk assessment.
+
+For example, do not decide whether:
+
+- 5 oscilloscopes are risky
+- 10 LEDs are normal
+- a Raspberry Pi is expensive
+- a laser is hazardous
+
+The parser only extracts WHAT the user is asking for.
+
+Risk assessment is performed later by the router.
+
+==================================================
+OUTPUT RULES
+==================================================
+
+Return ONLY ONE valid JSON object.
+
+The JSON must follow the provided schema.
+
+Do NOT return:
+
+- markdown
+- code fences
+- explanations
+- comments
+- reasoning
+- extra text before or after the JSON
+
+The output must be directly parseable using:
+
+json.loads()
+
+USER MESSAGE:
+{raw_text}
+"""
+
+
     try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                system_instruction="You are a helpful assistant that outputs strictly in JSON.",
-                temperature=0,
-            )
-        )
-        
-        result_content = response.text
+
+        # This automatically:
+        # 1. Tries Groq first
+        # 2. If Groq fails -> tries Gemini models
+        result_content = generate_with_fallback(prompt)
+
         parsed_json = json.loads(result_content)
+
         return parsed_json
-        
+
+
     except Exception as e:
-        print(f"Error parsing with Gemini: {e}")
-        return {"needs_human_clarification": True, "raw": raw_text, "error": str(e)}
+
+        print(f"Error parsing request: {e}")
+
+        return {
+            "needs_human_clarification": True,
+            "raw": raw_text,
+            "error": str(e)
+        }
+
 
 if __name__ == "__main__":
 
     test_requests = [
-        "I need 2 Arduino Uno boards",
-        "I need 2 Arduino Uno boards and 3 breadboards",
-        "I need an Arduino Uno",
-        "I am returning 5 LEDs",
-        "I need some equipment"
+        "bhai 1 oscilloscope chahiye",
     ]
 
     for request in test_requests:
+
         print("\n" + "=" * 50)
+
         print("USER REQUEST:")
         print(request)
 
         result = parse_request(request, "lab")
 
         print("\nPARSED RESULT:")
+
         print(json.dumps(result, indent=4))
