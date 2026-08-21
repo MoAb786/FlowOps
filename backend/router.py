@@ -375,18 +375,10 @@ Return only valid JSON.
 
 
 def route_request(parsed_data: dict, domain: str):
-    """
-    Determines:
-    1. Risk level
-    2. Approver
-    3. Risk details
-    """
+    risk_data = assess_risk(parsed_data, domain)
 
-    risk_details = assess_risk(parsed_data, domain)
+    risk_level = risk_data.get("risk_level", "HIGH").upper()
 
-    risk_level = risk_details.get("risk_level", "HIGH").upper()
-
-    # Map risk level to approver
     if risk_level == "NORMAL":
         approver = "system"
 
@@ -394,10 +386,10 @@ def route_request(parsed_data: dict, domain: str):
         approver = "operator"
 
     else:
-        approver = "operator"
         risk_level = "HIGH"
+        approver = "operator"
 
-    return risk_level, approver, risk_details
+    return risk_level, approver
 
 
 # ---------------------------------------------------------
