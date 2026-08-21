@@ -6,10 +6,11 @@
     "Resistor": 500,
     "Capacitor": 300,
     "Raspberry Pi": 10,
-    "Oscilloscope": 5,
+    "Oscilloscope": 1,
     "Multimeter": 8,
     "Jumper Wires": 150,
-    "Servo Motor": 15
+    "Servo Motor": 15,
+    "arduinos": 0
   },
   "restaurant": {
     "Burger": 47,
