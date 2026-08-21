@@ -32,16 +32,16 @@ class LabRequest(BaseModel):
 
 def parse_request(raw_text: str, domain: str) -> dict:
 
-    schema_path = f"schemas/{domain}.json"
+    schema_path = Path(__file__).resolve().parent / "schemas" / f"{domain}.json"
 
-    if not os.path.exists(schema_path):
+    if not schema_path.exists():
         return {
             "needs_human_clarification": True,
             "raw": raw_text,
             "error": f"Unknown domain schema: {domain}"
         }
 
-    with open(schema_path, "r") as f:
+    with open(schema_path, "r", encoding="utf-8") as f:
         schema = json.load(f)
 
     # Load known inventory items so AI can fuzzy-match user input
