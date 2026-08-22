@@ -10,6 +10,13 @@
 
 ---
 
+## 🚀 Live Deployments
+- **Frontend (Dashboard):** [https://flowops-lilac.vercel.app](https://flowops-lilac.vercel.app)
+- **Backend (API):** [https://flowopsbackend.vercel.app/docs](https://flowopsbackend.vercel.app/docs)
+- **Notion Database:** [View on Notion](https://app.notion.com/p/FlowOps-3c29eee0544780909aaec91300b18eae?source=copy_link)
+- **Telegram Channel:** [https://t.me/FlowOpsDemo](https://t.me/FlowOpsDemo)
+
+---
 ## 📸 Proof of Execution & Visual Walkthrough
 
 > *Screenshots demonstrating the complete end-to-end flow: from natural language request submission to Notion Human-in-the-Loop decision-making, autonomous polling, backend execution, live inventory updates, and instant Telegram dispatch.*
