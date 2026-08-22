@@ -24,7 +24,8 @@ async def poll_notion_updates():
                             "or": [
                                 {"property": "status", "select": {"equals": "Approved"}},
                                 {"property": "status", "select": {"equals": "Denied"}},
-                                {"property": "status", "select": {"equals": "Needs Clarification"}}
+                                {"property": "status", "select": {"equals": "Needs Clarification"}},
+                                {"property": "status", "select": {"equals": "Auto-Approved"}}
                             ]
                         },
                         {
@@ -80,14 +81,14 @@ async def poll_notion_updates():
             }
             
             # Perform domain-level actions and write audit log
-            if status == "Approved":
+            if status in ["Approved", "Auto-Approved"]:
                 await trigger_domain_action(request_record)
                 await write_run_log({
                     "request_id": request_id,
                     "action_taken": event_type,
                     "actor": "system poller",
                     "timestamp": datetime.utcnow().isoformat(),
-                    "result": "Manually Approved"
+                    "result": status
                 })
             elif status == "Denied":
                 await write_run_log({

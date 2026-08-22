@@ -43,6 +43,8 @@ def build_status_notification(status: str, request_id: str, sender_id: str, deta
 
     if status == "Approved":
         header = "\u2705 <b>Lab Request Approved</b>"
+    elif status == "Auto-Approved":
+        header = "\u26a1 <b>Request Auto-Approved</b>"
     elif status == "Denied":
         header = "\u274c <b>Request Denied</b>"
     elif status == "Needs Clarification":

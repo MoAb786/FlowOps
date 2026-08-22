@@ -1,12 +1,12 @@
 {
   "lab": {
-    "Arduino Uno": 15,
+    "Arduino Uno": 9,
     "Breadboard": 30,
     "LED": 190,
     "Resistor": 500,
     "Capacitor": 300,
     "Raspberry Pi": 10,
-    "Oscilloscope": 4,
+    "Oscilloscope": 2,
     "Multimeter": 8,
     "Jumper Wires": 150,
     "Servo Motor": 15

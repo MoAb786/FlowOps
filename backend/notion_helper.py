@@ -152,7 +152,7 @@ async def create_pending_card(request_record: dict, processed: bool = False):
 
         # --- Telegram notification for new submissions ---
         status = request_record.get("status", "Pending")
-        notifiable_statuses = {"Pending", "Needs Clarification", "Approved", "Denied"}
+        notifiable_statuses = {"Pending", "Needs Clarification", "Approved", "Denied", "Auto-Approved"}
         if status in notifiable_statuses:
             send_telegram(
                 build_status_notification(
@@ -275,7 +275,7 @@ async def process_notion_webhook(payload: dict):
         processed = properties.get("Processed", {}).get("checkbox", False)
         
         # Handle all actionable statuses that have not yet been processed
-        actionable_statuses = {"Approved", "Denied", "Needs Clarification", "Pending"}
+        actionable_statuses = {"Approved", "Denied", "Needs Clarification", "Pending", "Auto-Approved"}
         if status in actionable_statuses and not processed:
             # Use page_id as the canonical request identifier (consistent with poller)
             request_id = page_id
@@ -303,14 +303,14 @@ async def process_notion_webhook(payload: dict):
             }
             
             # Perform domain-level action and write log for terminal statuses
-            if status == "Approved":
+            if status in ["Approved", "Auto-Approved"]:
                 await trigger_domain_action(request_record)
                 await write_run_log({
                     "request_id": request_id,
                     "action_taken": event_type,
                     "actor": "human approver",
                     "timestamp": datetime.utcnow().isoformat(),
-                    "result": "Manually Approved"
+                    "result": status
                 })
             elif status == "Denied":
                 await write_run_log({
